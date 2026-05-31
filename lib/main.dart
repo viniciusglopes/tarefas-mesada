@@ -6,6 +6,7 @@ import 'screens/auth/parent_login_screen.dart';
 import 'screens/auth/child_login_screen.dart';
 import 'screens/parent/dashboard_screen.dart';
 import 'screens/child/home_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,8 @@ class TarefasMesadaApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const ChildLoginScreen());
           case '/parent-dashboard':
             return MaterialPageRoute(builder: (_) => const ParentDashboardScreen());
+          case '/admin':
+            return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
           case '/child-home':
             final childData = settings.arguments as Map<String, dynamic>;
             return MaterialPageRoute(builder: (_) => ChildHomeScreen(childData: childData));

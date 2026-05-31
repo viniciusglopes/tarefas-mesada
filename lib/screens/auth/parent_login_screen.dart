@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/admin_service.dart';
 
 class ParentLoginScreen extends StatefulWidget {
   const ParentLoginScreen({super.key});
@@ -45,14 +46,18 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
               duration: Duration(seconds: 2),
             ),
           );
-          Navigator.pushReplacementNamed(context, '/parent-dashboard');
+          final route = AdminService.isAdmin() ? '/admin' : '/parent-dashboard';
+          Navigator.pushReplacementNamed(context, route);
         }
       } else {
         await AuthService.signInParent(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
-        if (mounted) Navigator.pushReplacementNamed(context, '/parent-dashboard');
+        if (mounted) {
+          final route = AdminService.isAdmin() ? '/admin' : '/parent-dashboard';
+          Navigator.pushReplacementNamed(context, route);
+        }
       }
     } catch (e) {
       if (mounted) _showError(_friendlyError(e.toString()));
