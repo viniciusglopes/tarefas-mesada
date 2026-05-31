@@ -18,7 +18,15 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   final _familyController = TextEditingController();
 
   Future<void> _submit() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) return;
+    if (_loading) return;
+    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+      _showError('Preencha email e senha');
+      return;
+    }
+    if (_isSignUp && (_nameController.text.trim().isEmpty || _familyController.text.trim().isEmpty)) {
+      _showError('Preencha todos os campos');
+      return;
+    }
 
     setState(() => _loading = true);
     try {
@@ -29,22 +37,52 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
           name: _nameController.text.trim(),
           familyName: _familyController.text.trim(),
         );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Conta criada com sucesso! Bem-vindo(a)!'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/parent-dashboard');
+        }
       } else {
         await AuthService.signInParent(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+        if (mounted) Navigator.pushReplacementNamed(context, '/parent-dashboard');
       }
-      if (mounted) Navigator.pushReplacementNamed(context, '/parent-dashboard');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: ${e.toString()}')),
-        );
-      }
+      if (mounted) _showError(_friendlyError(e.toString()));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Login social em breve! Use email e senha por enquanto.'),
+        backgroundColor: AppColors.warning,
+      ),
+    );
+  }
+
+  String _friendlyError(String error) {
+    if (error.contains('Invalid login credentials')) return 'Email ou senha incorretos';
+    if (error.contains('User already registered')) return 'Este email ja esta cadastrado. Tente fazer login.';
+    if (error.contains('over_email_send_rate_limit') || error.contains('429')) return 'Muitas tentativas. Aguarde 1 minuto e tente novamente.';
+    if (error.contains('Email not confirmed')) return 'Confirme seu email antes de fazer login.';
+    if (error.contains('Password should be at least')) return 'A senha deve ter pelo menos 6 caracteres.';
+    return error.replaceAll('AuthApiException(message: ', '').replaceAll(')', '');
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
+    );
   }
 
   @override
@@ -94,8 +132,41 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => setState(() => _isSignUp = !_isSignUp),
+              onPressed: _loading ? null : () => setState(() => _isSignUp = !_isSignUp),
               child: Text(_isSignUp ? 'Ja tenho conta' : 'Criar nova conta'),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('ou continue com', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _loading ? null : _showComingSoon,
+              icon: const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))),
+              label: const Text('Continuar com Google'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52),
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _loading ? null : _showComingSoon,
+              icon: const Icon(Icons.apple, size: 24, color: AppColors.textPrimary),
+              label: const Text('Continuar com Apple'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 52),
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
             ),
           ],
         ),
