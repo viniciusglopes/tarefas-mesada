@@ -18,17 +18,11 @@ class AuthService {
     );
 
     if (authResponse.user != null) {
-      final familyResult = await _client
-          .from('families')
-          .insert({'name': familyName})
-          .select()
-          .single();
-
-      await _client.from('parents').insert({
-        'id': authResponse.user!.id,
-        'family_id': familyResult['id'],
-        'name': name,
-        'email': email,
+      await _client.rpc('signup_parent', params: {
+        'p_user_id': authResponse.user!.id,
+        'p_name': name,
+        'p_email': email,
+        'p_family_name': familyName,
       });
     }
 

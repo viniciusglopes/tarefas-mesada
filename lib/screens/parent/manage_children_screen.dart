@@ -22,11 +22,15 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
   }
 
   Future<void> _load() async {
-    final children = await ChildService.getChildren(widget.familyId);
-    setState(() {
-      _children = children;
-      _loading = false;
-    });
+    try {
+      final children = await ChildService.getChildren(widget.familyId);
+      setState(() {
+        _children = children;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   @override

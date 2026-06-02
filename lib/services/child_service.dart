@@ -35,15 +35,15 @@ class ChildService {
     String? avatarUrl,
     String avatarType = 'emoji',
   }) async {
-    await _client.from('children').insert({
-      'family_id': familyId,
-      'name': name,
-      'username': username,
-      'pin_hash': AuthService.hashPin(pin),
-      'gender': gender,
-      'birth_date': birthDate?.toIso8601String().split('T').first,
-      'avatar_url': avatarUrl,
-      'avatar_type': avatarType,
+    await _client.rpc('create_child', params: {
+      'p_family_id': familyId,
+      'p_name': name,
+      'p_username': username,
+      'p_pin_hash': AuthService.hashPin(pin),
+      'p_gender': gender,
+      'p_birth_date': birthDate?.toIso8601String().split('T').first,
+      'p_avatar_url': avatarUrl,
+      'p_avatar_type': avatarType,
     });
   }
 
