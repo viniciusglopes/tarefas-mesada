@@ -130,7 +130,10 @@ class _AdminFamiliesScreenState extends State<AdminFamiliesScreen> {
                   ),
                   child: Row(
                     children: [
-                      Text(c['avatar_url'] ?? '🧒', style: const TextStyle(fontSize: 24)),
+                      if (c['avatar_url'] != null && c['avatar_url'].toString().startsWith('http'))
+                        CircleAvatar(radius: 14, backgroundImage: NetworkImage(c['avatar_url']))
+                      else
+                        Text(c['avatar_url'] ?? '🧒', style: const TextStyle(fontSize: 24)),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(

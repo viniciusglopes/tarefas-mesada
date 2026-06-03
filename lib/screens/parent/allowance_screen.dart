@@ -170,7 +170,9 @@ class _AllowanceScreenState extends State<AllowanceScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 48)),
+            child.hasPhoto
+                ? CircleAvatar(radius: 28, backgroundImage: NetworkImage(child.avatarUrl!))
+                : Text(child.emoji, style: const TextStyle(fontSize: 48)),
             const SizedBox(height: 8),
             Text(child.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
@@ -351,11 +353,7 @@ class _ChildAllowanceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 28)),
-              ),
+              child.avatarWidget(),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

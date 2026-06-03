@@ -109,11 +109,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                  child: Text(_child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 32)),
-                ),
+                _child.avatarWidget(size: 30, fontSize: 32),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(

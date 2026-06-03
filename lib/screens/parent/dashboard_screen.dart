@@ -579,11 +579,7 @@ class _ChildCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-              child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 24)),
-            ),
+            child.avatarWidget(fontSize: 24),
             const SizedBox(width: 14),
             Expanded(
               child: Column(

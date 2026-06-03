@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Child {
   final String id;
   final String familyId;
@@ -56,6 +58,23 @@ class Child {
       allowanceAmount: (json['allowance_amount'] ?? 0).toDouble(),
       allowanceFrequency: json['allowance_frequency'] ?? 'weekly',
       periodStartDate: json['period_start_date'] != null ? DateTime.parse(json['period_start_date']) : null,
+    );
+  }
+
+  bool get hasPhoto => avatarUrl != null && avatarUrl!.startsWith('http');
+  String get emoji => hasPhoto ? '🧒' : (avatarUrl ?? '🧒');
+
+  Widget avatarWidget({double size = 24, double fontSize = 28}) {
+    if (hasPhoto) {
+      return CircleAvatar(
+        radius: size,
+        backgroundImage: NetworkImage(avatarUrl!),
+      );
+    }
+    return CircleAvatar(
+      radius: size,
+      backgroundColor: const Color(0x1A4CAF50),
+      child: Text(emoji, style: TextStyle(fontSize: fontSize)),
     );
   }
 

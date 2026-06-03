@@ -133,10 +133,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 24)),
-              ),
+              leading: child.avatarWidget(fontSize: 24),
               title: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text('${child.xp} XP • R\$ ${child.balance.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               children: _templates.isEmpty

@@ -152,7 +152,7 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          '${assignedChild.avatarUrl ?? "🧒"} ${assignedChild.name}',
+                          '${assignedChild.emoji} ${assignedChild.name}',
                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                       ),
@@ -200,10 +200,7 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 24)),
-              ),
+              leading: child.avatarWidget(fontSize: 24),
               title: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text('${child.xp} XP • Nivel ${child.level}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               children: _templates.map((template) => ListTile(
@@ -380,7 +377,7 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
                         labelStyle: TextStyle(fontSize: 12, color: assignedTo == null ? AppColors.childGreen : AppColors.textSecondary),
                       ),
                       ..._children.map((c) => ChoiceChip(
-                        label: Text('${c.avatarUrl ?? "🧒"} ${c.name}'),
+                        label: Text('${c.emoji} ${c.name}'),
                         selected: assignedTo == c.id,
                         onSelected: (_) => setSheetState(() => assignedTo = c.id),
                         selectedColor: AppColors.childGreen.withValues(alpha: 0.2),

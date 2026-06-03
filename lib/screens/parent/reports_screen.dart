@@ -138,11 +138,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                                child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 22)),
-                              ),
+                              child.avatarWidget(size: 20, fontSize: 22),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -205,7 +201,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         children: [
                           Text(medal, style: const TextStyle(fontSize: 24)),
                           const SizedBox(width: 12),
-                          Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 24)),
+                          if (child.hasPhoto)
+                            CircleAvatar(radius: 14, backgroundImage: NetworkImage(child.avatarUrl!))
+                          else
+                            Text(child.emoji, style: const TextStyle(fontSize: 24)),
                           const SizedBox(width: 10),
                           Expanded(child: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600))),
                           Text('${_childStats[child.id]?['percent'] ?? 0}%', style: const TextStyle(fontWeight: FontWeight.bold)),

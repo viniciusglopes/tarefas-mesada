@@ -57,10 +57,7 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                         border: Border.all(color: AppColors.border),
                       ),
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                          child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 28)),
-                        ),
+                        leading: child.avatarWidget(),
                         title: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                         trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
                         onTap: () => Navigator.push(
@@ -162,7 +159,9 @@ class _ParentChatScreenState extends State<_ParentChatScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(widget.child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 24)),
+            widget.child.hasPhoto
+                ? CircleAvatar(radius: 14, backgroundImage: NetworkImage(widget.child.avatarUrl!))
+                : Text(widget.child.emoji, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
             Text(widget.child.name),
           ],

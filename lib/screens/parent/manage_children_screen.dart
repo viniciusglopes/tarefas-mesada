@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../core/theme.dart';
 import '../../models/child.dart';
@@ -40,7 +40,16 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gerenciar Filhos')),
+      appBar: AppBar(
+        title: const Text('Gerenciar Filhos'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add),
+            onPressed: _showAddChild,
+            tooltip: 'Adicionar Filho',
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _children.isEmpty
@@ -62,11 +71,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                       child: Column(
                         children: [
                           ListTile(
-                            leading: CircleAvatar(
-                              radius: 24,
-                              backgroundColor: AppColors.childGreen.withValues(alpha: 0.1),
-                              child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 28)),
-                            ),
+                            leading: child.avatarWidget(),
                             title: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,9 +117,18 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                                 ),
                               ],
                             ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.edit, color: AppColors.parentBlue),
-                              onPressed: () => _showEditChild(child),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: AppColors.parentBlue),
+                                  onPressed: () => _showEditChild(child),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                                  onPressed: () => _confirmDeleteChild(child),
+                                ),
+                              ],
                             ),
                           ),
                           Padding(
@@ -139,23 +153,67 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _children.isEmpty ? FloatingActionButton.extended(
         onPressed: _showAddChild,
         backgroundColor: AppColors.parentBlue,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add),
         label: const Text('Adicionar Filho'),
+      ) : null,
+    );
+  }
+
+  void _confirmDeleteChild(Child child) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Excluir ${child.name}?'),
+        content: const Text('Essa acao nao pode ser desfeita. Todos os dados deste filho serao removidos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ChildService.deleteChild(child.id);
+                _load();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${child.name} removido'), backgroundColor: AppColors.success),
+                  );
+                }
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Nao foi possivel excluir. Tente novamente.'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+            child: const Text('Excluir'),
+          ),
+        ],
       ),
     );
   }
 
   Future<String?> _uploadPhoto() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400, imageQuality: 80);
-    if (picked == null) return null;
+    final result = await FilePicker.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return null;
 
-    final bytes = await picked.readAsBytes();
-    final ext = picked.name.split('.').last;
+    final file = result.files.first;
+    final bytes = file.bytes;
+    if (bytes == null) return null;
+
+    final ext = file.extension ?? 'jpg';
     final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
     await SupabaseService.client.storage.from('avatars').uploadBinary(
@@ -389,6 +447,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                           gender: gender,
                           birthDate: birthDate,
                           avatarUrl: avatar,
+                          avatarType: avatar.startsWith('http') ? 'photo' : 'emoji',
                         );
                         _load();
                         _showDefaultTasksPrompt();
@@ -673,7 +732,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                             childId: child.id,
                             name: nameCtrl.text.trim(),
                             avatarUrl: avatar,
-                            avatarType: 'emoji',
+                            avatarType: avatar.startsWith('http') ? 'photo' : 'emoji',
                             gender: gender,
                             allowanceAmount: double.tryParse(allowanceCtrl.text.replaceAll(',', '.')) ?? 0,
                             allowanceFrequency: allowanceFreq,
