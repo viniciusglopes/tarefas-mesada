@@ -399,7 +399,7 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
                           description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
                           icon: icon,
                           xpReward: int.tryParse(xpCtrl.text) ?? 10,
-                          moneyReward: double.tryParse(moneyCtrl.text) ?? 0,
+                          moneyReward: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
                           frequency: frequency,
                           assignedTo: assignedTo,
                         );
@@ -410,7 +410,7 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
                           description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
                           icon: icon,
                           xpReward: int.tryParse(xpCtrl.text) ?? 10,
-                          moneyReward: double.tryParse(moneyCtrl.text) ?? 0,
+                          moneyReward: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
                           frequency: frequency,
                           assignedTo: assignedTo,
                         );

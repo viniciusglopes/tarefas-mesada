@@ -412,7 +412,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                           icon: icon,
                           severity: severity,
                           xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
-                          moneyDiscount: double.tryParse(moneyCtrl.text) ?? 0,
+                          moneyDiscount: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
                         );
                       } else {
                         await PenaltyService.createTemplate(
@@ -421,7 +421,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                           icon: icon,
                           severity: severity,
                           xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
-                          moneyDiscount: double.tryParse(moneyCtrl.text) ?? 0,
+                          moneyDiscount: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
                         );
                       }
                       _load();

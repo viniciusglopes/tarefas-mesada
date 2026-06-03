@@ -358,7 +358,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                             avatarUrl: avatar,
                             avatarType: 'emoji',
                             gender: gender,
-                            allowanceAmount: double.tryParse(allowanceCtrl.text) ?? 0,
+                            allowanceAmount: double.tryParse(allowanceCtrl.text.replaceAll(',', '.')) ?? 0,
                             allowanceFrequency: allowanceFreq,
                           );
                           _load();

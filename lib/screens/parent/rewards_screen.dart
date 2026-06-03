@@ -221,7 +221,7 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
                           title: titleCtrl.text.trim(),
                           description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
                           icon: icon,
-                          price: double.tryParse(priceCtrl.text) ?? 0,
+                          price: double.tryParse(priceCtrl.text.replaceAll(',', '.')) ?? 0,
                           category: category,
                         );
                       } else {
@@ -230,7 +230,7 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
                           title: titleCtrl.text.trim(),
                           description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
                           icon: icon,
-                          price: double.tryParse(priceCtrl.text) ?? 0,
+                          price: double.tryParse(priceCtrl.text.replaceAll(',', '.')) ?? 0,
                           category: category,
                         );
                       }

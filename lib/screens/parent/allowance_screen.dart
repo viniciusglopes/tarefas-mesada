@@ -138,7 +138,7 @@ class _AllowanceScreenState extends State<AllowanceScreen> {
                     Navigator.pop(ctx);
                     await ChildService.updateChild(
                       childId: child.id,
-                      allowanceAmount: double.tryParse(amountCtrl.text) ?? 0,
+                      allowanceAmount: double.tryParse(amountCtrl.text.replaceAll(',', '.')) ?? 0,
                       allowanceFrequency: frequency,
                     );
                     _load();
