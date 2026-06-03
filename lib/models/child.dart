@@ -13,6 +13,9 @@ class Child {
   final int streak;
   final int bestStreak;
   final DateTime? lastTaskDate;
+  final double allowanceAmount;
+  final String allowanceFrequency;
+  final DateTime? periodStartDate;
 
   Child({
     required this.id,
@@ -29,6 +32,9 @@ class Child {
     this.streak = 0,
     this.bestStreak = 0,
     this.lastTaskDate,
+    this.allowanceAmount = 0,
+    this.allowanceFrequency = 'weekly',
+    this.periodStartDate,
   });
 
   factory Child.fromJson(Map<String, dynamic> json) {
@@ -47,6 +53,9 @@ class Child {
       streak: json['streak'] ?? 0,
       bestStreak: json['best_streak'] ?? 0,
       lastTaskDate: json['last_task_date'] != null ? DateTime.parse(json['last_task_date']) : null,
+      allowanceAmount: (json['allowance_amount'] ?? 0).toDouble(),
+      allowanceFrequency: json['allowance_frequency'] ?? 'weekly',
+      periodStartDate: json['period_start_date'] != null ? DateTime.parse(json['period_start_date']) : null,
     );
   }
 

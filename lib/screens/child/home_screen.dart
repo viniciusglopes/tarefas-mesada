@@ -4,6 +4,7 @@ import '../../models/child.dart';
 import '../../models/task.dart';
 import '../../services/task_service.dart';
 import '../../services/child_service.dart';
+import '../../services/session_service.dart';
 import 'cards_screen.dart';
 import 'badges_screen.dart';
 import 'shop_screen.dart';
@@ -89,6 +90,13 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
     );
   }
 
+  void _logout() async {
+    await SessionService.clearChildSession();
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+    }
+  }
+
   Widget _buildHome() {
     return SafeArea(
       child: RefreshIndicator(
@@ -143,6 +151,13 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.childGreen),
                     ),
                     Text('${_child.xp} XP', style: const TextStyle(fontSize: 12, color: AppColors.xpPurple)),
+                    GestureDetector(
+                      onTap: _logout,
+                      child: const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Icon(Icons.logout, size: 18, color: AppColors.textSecondary),
+                      ),
+                    ),
                   ],
                 ),
               ],

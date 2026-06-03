@@ -53,6 +53,8 @@ class ChildService {
     String? avatarUrl,
     String? avatarType,
     String? gender,
+    double? allowanceAmount,
+    String? allowanceFrequency,
   }) async {
     final updates = <String, dynamic>{
       'updated_at': DateTime.now().toIso8601String(),
@@ -61,6 +63,8 @@ class ChildService {
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
     if (avatarType != null) updates['avatar_type'] = avatarType;
     if (gender != null) updates['gender'] = gender;
+    if (allowanceAmount != null) updates['allowance_amount'] = allowanceAmount;
+    if (allowanceFrequency != null) updates['allowance_frequency'] = allowanceFrequency;
 
     await _client.from('children').update(updates).eq('id', childId);
   }
@@ -73,6 +77,76 @@ class ChildService {
       'pin_hash': AuthService.hashPin(newPin),
       'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', childId);
+  }
+
+  static Future<void> resetPeriod({
+    required String childId,
+    required String familyId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String frequency,
+    required double allowanceAmount,
+  }) async {
+    final child = await getChild(childId);
+
+    final tasksResult = await _client
+        .from('tasks')
+        .select()
+        .eq('child_id', childId)
+        .gte('date', startDate.toIso8601String().split('T').first)
+        .lte('date', endDate.toIso8601String().split('T').first);
+
+    final tasks = tasksResult as List;
+    final completed = tasks.where((t) => t['status'] == 'approved').length;
+    final moneyEarned = tasks.fold<double>(0, (sum, t) {
+      if (t['status'] == 'approved' && t['task_templates'] != null) {
+        return sum + ((t['task_templates']['money_reward'] ?? 0) as num).toDouble();
+      }
+      return sum;
+    });
+
+    final penaltiesResult = await _client
+        .from('penalties')
+        .select()
+        .eq('child_id', childId)
+        .gte('applied_at', startDate.toIso8601String())
+        .lte('applied_at', endDate.toIso8601String());
+
+    final penalties = penaltiesResult as List;
+    final moneyLost = penalties.fold<double>(0, (sum, p) => sum + ((p['money_lost'] ?? 0) as num).toDouble());
+
+    await _client.from('allowance_periods').insert({
+      'child_id': childId,
+      'family_id': familyId,
+      'start_date': startDate.toIso8601String().split('T').first,
+      'end_date': endDate.toIso8601String().split('T').first,
+      'frequency': frequency,
+      'allowance_amount': allowanceAmount,
+      'tasks_completed': completed,
+      'tasks_total': tasks.length,
+      'money_earned': moneyEarned,
+      'penalties_applied': penalties.length,
+      'money_lost': moneyLost,
+      'final_balance': child.balance,
+      'status': 'closed',
+      'closed_by': SupabaseService.currentUser?.id,
+    });
+
+    await _client.from('children').update({
+      'period_start_date': DateTime.now().toIso8601String().split('T').first,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', childId);
+  }
+
+  static Future<List<Map<String, dynamic>>> getPeriodHistory(String childId) async {
+    final result = await _client
+        .from('allowance_periods')
+        .select()
+        .eq('child_id', childId)
+        .order('end_date', ascending: false)
+        .limit(20);
+
+    return List<Map<String, dynamic>>.from(result);
   }
 
   static Future<Map<String, dynamic>> getPermissions(String childId) async {

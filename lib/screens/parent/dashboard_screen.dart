@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../services/supabase_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/session_service.dart';
 import '../../models/child.dart';
 import '../../models/task.dart';
 import '../../services/task_service.dart';
@@ -9,6 +10,8 @@ import 'penalties_screen.dart';
 import 'rewards_screen.dart';
 import 'manage_children_screen.dart';
 import 'messages_screen.dart';
+import 'tasks_screen.dart';
+import 'allowance_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -144,8 +147,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             Row(
               children: [
                 _QuickAction(
-                  icon: '⚠️', label: 'Penali-\ndade', color: AppColors.danger,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PenaltiesScreen(familyId: _familyId))),
+                  icon: '📋', label: 'Tarefas', color: AppColors.childGreen,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TasksManageScreen(familyId: _familyId))).then((_) => _loadData()),
+                ),
+                const SizedBox(width: 12),
+                _QuickAction(
+                  icon: '💰', label: 'Mesada', color: AppColors.parentBlue,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllowanceScreen(familyId: _familyId))).then((_) => _loadData()),
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
@@ -154,13 +162,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
-                  icon: '👶', label: 'Gerenciar\nFilhos', color: AppColors.parentBlue,
-                  onTap: () => setState(() => _currentIndex = 2),
-                ),
-                const SizedBox(width: 12),
-                _QuickAction(
-                  icon: '💬', label: 'Mensa-\ngens', color: AppColors.xpPurple,
-                  onTap: () => setState(() => _currentIndex = 3),
+                  icon: '⚠️', label: 'Penali-\ndade', color: AppColors.danger,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PenaltiesScreen(familyId: _familyId))),
                 ),
               ],
             ),
@@ -319,6 +322,18 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           ),
           const SizedBox(height: 16),
           _SettingsTile(
+            icon: Icons.task_alt,
+            title: 'Tarefas',
+            subtitle: 'Criar e gerenciar tarefas dos filhos',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TasksManageScreen(familyId: _familyId))),
+          ),
+          _SettingsTile(
+            icon: Icons.savings,
+            title: 'Mesada',
+            subtitle: 'Configurar valor, frequencia e fechar periodo',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AllowanceScreen(familyId: _familyId))),
+          ),
+          _SettingsTile(
             icon: Icons.gavel,
             title: 'Penalidades',
             subtitle: 'Gerenciar modelos de penalidade',
@@ -342,6 +357,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             child: OutlinedButton.icon(
               onPressed: () async {
                 await AuthService.signOut();
+                await SessionService.clearChildSession();
                 if (mounted) {
                   Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
                 }
@@ -479,6 +495,11 @@ class _ChildCard extends StatelessWidget {
                     'Nivel ${child.level} • ${child.xp} XP • R\$ ${child.balance.toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
+                  if (child.allowanceAmount > 0)
+                    Text(
+                      'Mesada: R\$ ${child.allowanceAmount.toStringAsFixed(2)} (${child.allowanceFrequency == 'monthly' ? 'mensal' : 'semanal'})',
+                      style: const TextStyle(fontSize: 11, color: AppColors.parentBlue),
+                    ),
                 ],
               ),
             ),

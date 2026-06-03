@@ -37,6 +37,27 @@ class PenaltyService {
     });
   }
 
+  static Future<void> updateTemplate({
+    required String templateId,
+    required String title,
+    String icon = '⚠️',
+    String severity = 'light',
+    int xpDiscount = 0,
+    double moneyDiscount = 0,
+  }) async {
+    await _client.from('penalty_templates').update({
+      'title': title,
+      'icon': icon,
+      'severity': severity,
+      'xp_discount': xpDiscount,
+      'money_discount': moneyDiscount,
+    }).eq('id', templateId);
+  }
+
+  static Future<void> deleteTemplate(String templateId) async {
+    await _client.from('penalty_templates').update({'is_active': false}).eq('id', templateId);
+  }
+
   static Future<void> applyPenalty({
     required String childId,
     required String parentId,

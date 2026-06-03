@@ -33,6 +33,23 @@ class RewardService {
     });
   }
 
+  static Future<void> updateReward({
+    required String rewardId,
+    required String title,
+    String? description,
+    String icon = '🎁',
+    required double price,
+    String category = 'gifts',
+  }) async {
+    await _client.from('rewards').update({
+      'title': title,
+      'description': description,
+      'icon': icon,
+      'price': price,
+      'category': category,
+    }).eq('id', rewardId);
+  }
+
   static Future<void> redeemReward({
     required String childId,
     required String rewardId,

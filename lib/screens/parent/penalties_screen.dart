@@ -92,7 +92,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateTemplate,
+        onPressed: _showTemplateForm,
         backgroundColor: AppColors.danger,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -224,6 +224,17 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                   ],
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: AppColors.parentBlue, size: 22),
+                onPressed: () => _showTemplateForm(template: t),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                onPressed: () async {
+                  await PenaltyService.deleteTemplate(t.id);
+                  _load();
+                },
+              ),
             ],
           ),
         );
@@ -300,12 +311,13 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
     );
   }
 
-  void _showCreateTemplate() {
-    final titleCtrl = TextEditingController();
-    final xpCtrl = TextEditingController(text: '10');
-    final moneyCtrl = TextEditingController(text: '0');
-    String severity = 'light';
-    String icon = '⚠️';
+  void _showTemplateForm({PenaltyTemplate? template}) {
+    final isEdit = template != null;
+    final titleCtrl = TextEditingController(text: template?.title ?? '');
+    final xpCtrl = TextEditingController(text: template != null ? '${template.xpDiscount}' : '10');
+    final moneyCtrl = TextEditingController(text: template != null ? template.moneyDiscount.toStringAsFixed(2) : '0');
+    String severity = template?.severity ?? 'light';
+    String icon = template?.icon ?? '⚠️';
 
     final icons = ['⚠️', '🚫', '❌', '💢', '🔴', '⛔', '📵', '🗑️'];
 
@@ -316,100 +328,113 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Novo Modelo de Penalidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                children: icons.map((e) => GestureDetector(
-                  onTap: () => setSheetState(() => icon = e),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: icon == e ? AppColors.danger : AppColors.border, width: icon == e ? 2 : 1),
-                      borderRadius: BorderRadius.circular(8),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isEdit ? 'Editar Penalidade' : 'Novo Modelo de Penalidade', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  children: icons.map((e) => GestureDetector(
+                    onTap: () => setSheetState(() => icon = e),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: icon == e ? AppColors.danger : AppColors.border, width: icon == e ? 2 : 1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(e, style: const TextStyle(fontSize: 24)),
                     ),
-                    child: Text(e, style: const TextStyle(fontSize: 24)),
-                  ),
-                )).toList(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Nome da penalidade'),
-              ),
-              const SizedBox(height: 12),
-              const Text('Gravidade', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 6),
-              Row(
-                children: ['light', 'medium', 'severe'].map((s) {
-                  final selected = severity == s;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: ChoiceChip(
-                        label: Text(_severityLabel(s)),
-                        selected: selected,
-                        onSelected: (_) => setSheetState(() => severity = s),
-                        selectedColor: _severityColor(s).withValues(alpha: 0.2),
-                        labelStyle: TextStyle(
-                          color: selected ? _severityColor(s) : AppColors.textSecondary,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                          fontSize: 12,
+                  )).toList(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Nome da penalidade'),
+                ),
+                const SizedBox(height: 12),
+                const Text('Gravidade', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                Row(
+                  children: ['light', 'medium', 'severe'].map((s) {
+                    final selected = severity == s;
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: ChoiceChip(
+                          label: Text(_severityLabel(s)),
+                          selected: selected,
+                          onSelected: (_) => setSheetState(() => severity = s),
+                          selectedColor: _severityColor(s).withValues(alpha: 0.2),
+                          labelStyle: TextStyle(
+                            color: selected ? _severityColor(s) : AppColors.textSecondary,
+                            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: xpCtrl,
-                      decoration: const InputDecoration(labelText: 'XP a perder'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: moneyCtrl,
-                      decoration: const InputDecoration(labelText: 'R\$ a perder'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (titleCtrl.text.trim().isEmpty) return;
-                    Navigator.pop(ctx);
-                    await PenaltyService.createTemplate(
-                      familyId: widget.familyId,
-                      title: titleCtrl.text.trim(),
-                      icon: icon,
-                      severity: severity,
-                      xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
-                      moneyDiscount: double.tryParse(moneyCtrl.text) ?? 0,
                     );
-                    _load();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Criar Modelo'),
+                  }).toList(),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: xpCtrl,
+                        decoration: const InputDecoration(labelText: 'XP a perder'),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: moneyCtrl,
+                        decoration: const InputDecoration(labelText: 'R\$ a perder'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (titleCtrl.text.trim().isEmpty) return;
+                      Navigator.pop(ctx);
+                      if (isEdit) {
+                        await PenaltyService.updateTemplate(
+                          templateId: template.id,
+                          title: titleCtrl.text.trim(),
+                          icon: icon,
+                          severity: severity,
+                          xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
+                          moneyDiscount: double.tryParse(moneyCtrl.text) ?? 0,
+                        );
+                      } else {
+                        await PenaltyService.createTemplate(
+                          familyId: widget.familyId,
+                          title: titleCtrl.text.trim(),
+                          icon: icon,
+                          severity: severity,
+                          xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
+                          moneyDiscount: double.tryParse(moneyCtrl.text) ?? 0,
+                        );
+                      }
+                      _load();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(isEdit ? 'Salvar' : 'Criar Modelo'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -68,6 +68,60 @@ class TaskService {
     }).eq('id', taskId);
   }
 
+  static Future<List<TaskTemplate>> getTaskTemplates(String familyId) async {
+    final result = await _client
+        .from('task_templates')
+        .select()
+        .eq('family_id', familyId)
+        .eq('is_active', true)
+        .order('title');
+
+    return (result as List).map((e) => TaskTemplate.fromJson(e)).toList();
+  }
+
+  static Future<void> updateTaskTemplate({
+    required String templateId,
+    required String title,
+    String? description,
+    String icon = '📋',
+    int xpReward = 10,
+    double moneyReward = 0,
+    String frequency = 'daily',
+    String? category,
+    String? assignedTo,
+  }) async {
+    await _client.from('task_templates').update({
+      'title': title,
+      'description': description,
+      'icon': icon,
+      'xp_reward': xpReward,
+      'money_reward': moneyReward,
+      'frequency': frequency,
+      'category': category,
+      'assigned_to': assignedTo,
+    }).eq('id', templateId);
+  }
+
+  static Future<void> deleteTaskTemplate(String templateId) async {
+    await _client.from('task_templates').update({'is_active': false}).eq('id', templateId);
+  }
+
+  static Future<void> assignTaskToChild({
+    required String templateId,
+    required String childId,
+    required String familyId,
+    DateTime? date,
+  }) async {
+    final targetDate = date ?? DateTime.now();
+    await _client.from('tasks').insert({
+      'template_id': templateId,
+      'child_id': childId,
+      'family_id': familyId,
+      'date': targetDate.toIso8601String().split('T').first,
+      'status': 'pending',
+    });
+  }
+
   static Future<void> createTaskTemplate({
     required String familyId,
     required String title,

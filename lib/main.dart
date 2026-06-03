@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'core/theme.dart';
 import 'services/supabase_service.dart';
+import 'services/session_service.dart';
+import 'services/admin_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/parent_login_screen.dart';
 import 'screens/auth/child_login_screen.dart';
@@ -11,11 +13,30 @@ import 'screens/admin/admin_dashboard_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.initialize();
-  runApp(const TarefasMesadaApp());
+  await SessionService.init();
+
+  final initialRoute = await _resolveInitialRoute();
+  final childData = await SessionService.getChildSession();
+
+  runApp(TarefasMesadaApp(initialRoute: initialRoute, childData: childData));
+}
+
+Future<String> _resolveInitialRoute() async {
+  if (SupabaseService.isAuthenticated) {
+    return AdminService.isAdmin() ? '/admin' : '/parent-dashboard';
+  }
+  final childData = await SessionService.getChildSession();
+  if (childData != null) {
+    return '/child-home';
+  }
+  return '/';
 }
 
 class TarefasMesadaApp extends StatelessWidget {
-  const TarefasMesadaApp({super.key});
+  final String initialRoute;
+  final Map<String, dynamic>? childData;
+
+  const TarefasMesadaApp({super.key, required this.initialRoute, this.childData});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +44,7 @@ class TarefasMesadaApp extends StatelessWidget {
       title: 'Tarefas & Mesada',
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
+      initialRoute: initialRoute,
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/':
@@ -37,8 +58,11 @@ class TarefasMesadaApp extends StatelessWidget {
           case '/admin':
             return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
           case '/child-home':
-            final childData = settings.arguments as Map<String, dynamic>;
-            return MaterialPageRoute(builder: (_) => ChildHomeScreen(childData: childData));
+            final data = settings.arguments as Map<String, dynamic>? ?? childData;
+            if (data == null) {
+              return MaterialPageRoute(builder: (_) => const LoginScreen());
+            }
+            return MaterialPageRoute(builder: (_) => ChildHomeScreen(childData: data));
           default:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
         }

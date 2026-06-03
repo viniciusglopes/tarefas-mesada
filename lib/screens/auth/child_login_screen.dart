@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/session_service.dart';
 
 class ChildLoginScreen extends StatefulWidget {
   const ChildLoginScreen({super.key});
@@ -24,6 +25,7 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
         pin: _pin,
       );
       if (child != null && mounted) {
+        await SessionService.saveChildSession(child);
         Navigator.pushReplacementNamed(context, '/child-home', arguments: child);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

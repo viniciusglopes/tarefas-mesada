@@ -236,8 +236,10 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
 
   void _showEditChild(Child child) {
     final nameCtrl = TextEditingController(text: child.name);
+    final allowanceCtrl = TextEditingController(text: child.allowanceAmount > 0 ? child.allowanceAmount.toStringAsFixed(2) : '');
     String avatar = child.avatarUrl ?? '🧒';
     String gender = child.gender ?? 'M';
+    String allowanceFreq = child.allowanceFrequency;
 
     final avatars = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'];
 
@@ -304,6 +306,38 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                const Text('Mesada', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: allowanceCtrl,
+                  decoration: const InputDecoration(labelText: 'Valor da mesada (R\$)', prefixText: 'R\$ '),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Semanal'),
+                        selected: allowanceFreq == 'weekly',
+                        onSelected: (_) => setSheetState(() => allowanceFreq = 'weekly'),
+                        selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
+                        labelStyle: TextStyle(fontSize: 12, color: allowanceFreq == 'weekly' ? AppColors.childGreen : AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Mensal'),
+                        selected: allowanceFreq == 'monthly',
+                        onSelected: (_) => setSheetState(() => allowanceFreq = 'monthly'),
+                        selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
+                        labelStyle: TextStyle(fontSize: 12, color: allowanceFreq == 'monthly' ? AppColors.childGreen : AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -324,6 +358,8 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                             avatarUrl: avatar,
                             avatarType: 'emoji',
                             gender: gender,
+                            allowanceAmount: double.tryParse(allowanceCtrl.text) ?? 0,
+                            allowanceFrequency: allowanceFreq,
                           );
                           _load();
                         },

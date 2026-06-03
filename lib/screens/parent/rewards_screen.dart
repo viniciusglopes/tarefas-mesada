@@ -118,6 +118,10 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
                             ),
                           ),
                           IconButton(
+                            icon: const Icon(Icons.edit_outlined, color: AppColors.parentBlue, size: 22),
+                            onPressed: () => _showEdit(r),
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
                             onPressed: () async {
                               await RewardService.deleteReward(r.id);
@@ -139,12 +143,13 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
     );
   }
 
-  void _showCreate() {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final priceCtrl = TextEditingController();
-    String category = 'gifts';
-    String icon = '🎁';
+  void _showRewardForm({Reward? reward}) {
+    final isEdit = reward != null;
+    final titleCtrl = TextEditingController(text: reward?.title ?? '');
+    final descCtrl = TextEditingController(text: reward?.description ?? '');
+    final priceCtrl = TextEditingController(text: reward != null ? reward.price.toStringAsFixed(2) : '');
+    String category = reward?.category ?? 'gifts';
+    String icon = reward?.icon ?? '🎁';
 
     final icons = ['🎁', '🎮', '🎡', '💵', '🍕', '🎬', '📱', '🏊', '🎪', '🎂', '👟', '📚'];
 
@@ -160,7 +165,7 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Nova Recompensa', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(isEdit ? 'Editar Recompensa' : 'Nova Recompensa', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
@@ -210,18 +215,29 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
                     onPressed: () async {
                       if (titleCtrl.text.trim().isEmpty || priceCtrl.text.isEmpty) return;
                       Navigator.pop(ctx);
-                      await RewardService.createReward(
-                        familyId: widget.familyId,
-                        title: titleCtrl.text.trim(),
-                        description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
-                        icon: icon,
-                        price: double.tryParse(priceCtrl.text) ?? 0,
-                        category: category,
-                      );
+                      if (isEdit) {
+                        await RewardService.updateReward(
+                          rewardId: reward.id,
+                          title: titleCtrl.text.trim(),
+                          description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                          icon: icon,
+                          price: double.tryParse(priceCtrl.text) ?? 0,
+                          category: category,
+                        );
+                      } else {
+                        await RewardService.createReward(
+                          familyId: widget.familyId,
+                          title: titleCtrl.text.trim(),
+                          description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                          icon: icon,
+                          price: double.tryParse(priceCtrl.text) ?? 0,
+                          category: category,
+                        );
+                      }
                       _load();
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.childGreen, foregroundColor: Colors.white),
-                    child: const Text('Criar Recompensa'),
+                    child: Text(isEdit ? 'Salvar' : 'Criar Recompensa'),
                   ),
                 ),
               ],
@@ -231,4 +247,7 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
       ),
     );
   }
+
+  void _showCreate() => _showRewardForm();
+  void _showEdit(Reward reward) => _showRewardForm(reward: reward);
 }
