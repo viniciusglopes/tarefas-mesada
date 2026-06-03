@@ -187,12 +187,11 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     bool uploadingPhoto = false;
 
     final avatarCategories = <String, List<String>>{
-      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'],
-      'blond': ['👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️', '👱🏼', '👱🏼‍♂️', '👱🏼‍♀️', '👱🏽', '👱🏽‍♂️', '👱🏽‍♀️'],
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿', '👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️'],
       'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
       'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
     };
-    final categoryLabels = {'people': 'Criancas', 'blond': 'Loiros', 'characters': 'Personagens', 'animals': 'Animais'};
+    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
 
     showModalBottomSheet(
       context: context,
@@ -462,12 +461,11 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     bool uploadingPhoto = false;
 
     final avatarCategories = <String, List<String>>{
-      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'],
-      'blond': ['👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️', '👱🏼', '👱🏼‍♂️', '👱🏼‍♀️', '👱🏽', '👱🏽‍♂️', '👱🏽‍♀️'],
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿', '👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️'],
       'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
       'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
     };
-    final categoryLabels = {'people': 'Criancas', 'blond': 'Loiros', 'characters': 'Personagens', 'animals': 'Animais'};
+    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
 
     if (photoUrl == null) {
       for (final entry in avatarCategories.entries) {
