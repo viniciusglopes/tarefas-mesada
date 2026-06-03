@@ -380,18 +380,29 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                         );
                         return;
                       }
-                      Navigator.pop(ctx);
-                      await ChildService.createChild(
-                        familyId: widget.familyId,
-                        name: nameCtrl.text.trim(),
-                        username: usernameCtrl.text.trim().toLowerCase(),
-                        pin: pinCtrl.text,
-                        gender: gender,
-                        birthDate: birthDate,
-                        avatarUrl: avatar,
-                      );
-                      _load();
-                      _showDefaultTasksPrompt();
+                      try {
+                        Navigator.pop(ctx);
+                        await ChildService.createChild(
+                          familyId: widget.familyId,
+                          name: nameCtrl.text.trim(),
+                          username: usernameCtrl.text.trim().toLowerCase(),
+                          pin: pinCtrl.text,
+                          gender: gender,
+                          birthDate: birthDate,
+                          avatarUrl: avatar,
+                        );
+                        _load();
+                        _showDefaultTasksPrompt();
+                      } catch (e) {
+                        if (mounted) {
+                          final msg = e.toString().contains('duplicate') || e.toString().contains('unique')
+                              ? 'Username ja existe. Escolha outro.'
+                              : 'Erro ao cadastrar: $e';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
+                          );
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.parentBlue,

@@ -39,13 +39,17 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
   }
 
   Future<void> _load() async {
-    final templates = await TaskService.getTaskTemplates(widget.familyId);
-    final children = await ChildService.getChildren(widget.familyId);
-    setState(() {
-      _templates = templates;
-      _children = children;
-      _loading = false;
-    });
+    try {
+      final templates = await TaskService.getTaskTemplates(widget.familyId);
+      final children = await ChildService.getChildren(widget.familyId);
+      setState(() {
+        _templates = templates;
+        _children = children;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   @override

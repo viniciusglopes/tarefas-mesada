@@ -24,6 +24,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _load() async {
+    try {
     final client = SupabaseService.client;
     final today = DateTime.now();
     final weekAgo = today.subtract(const Duration(days: 7));
@@ -79,6 +80,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _childStats = childStatsMap;
       _loading = false;
     });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   @override

@@ -25,11 +25,15 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
   }
 
   Future<void> _load() async {
-    final children = await ChildService.getChildren(widget.familyId);
-    setState(() {
-      _children = children;
-      _loading = false;
-    });
+    try {
+      final children = await ChildService.getChildren(widget.familyId);
+      setState(() {
+        _children = children;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -106,18 +110,22 @@ class _ParentChatScreenState extends State<_ParentChatScreen> {
   }
 
   Future<void> _load() async {
-    final msgs = await MessageService.getMessages(
-      familyId: widget.familyId,
-      childId: widget.child.id,
-    );
-    setState(() {
-      _messages = msgs;
-      _loading = false;
-    });
-    _scrollToBottom();
+    try {
+      final msgs = await MessageService.getMessages(
+        familyId: widget.familyId,
+        childId: widget.child.id,
+      );
+      setState(() {
+        _messages = msgs;
+        _loading = false;
+      });
+      _scrollToBottom();
 
-    for (final msg in msgs.where((m) => !m.isRead && !m.isFromParent)) {
-      await MessageService.markAsRead(msg.id);
+      for (final msg in msgs.where((m) => !m.isRead && !m.isFromParent)) {
+        await MessageService.markAsRead(msg.id);
+      }
+    } catch (_) {
+      setState(() => _loading = false);
     }
   }
 

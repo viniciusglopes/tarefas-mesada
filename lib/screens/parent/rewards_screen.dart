@@ -36,11 +36,15 @@ class _RewardsManageScreenState extends State<RewardsManageScreen> {
   }
 
   Future<void> _load() async {
-    final rewards = await RewardService.getRewards(widget.familyId);
-    setState(() {
-      _rewards = rewards;
-      _loading = false;
-    });
+    try {
+      final rewards = await RewardService.getRewards(widget.familyId);
+      setState(() {
+        _rewards = rewards;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   @override

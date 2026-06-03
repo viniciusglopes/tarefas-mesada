@@ -44,13 +44,17 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
   }
 
   Future<void> _load() async {
-    final templates = await PenaltyService.getTemplates(widget.familyId);
-    final children = await ChildService.getChildren(widget.familyId);
-    setState(() {
-      _templates = templates;
-      _children = children;
-      _loading = false;
-    });
+    try {
+      final templates = await PenaltyService.getTemplates(widget.familyId);
+      final children = await ChildService.getChildren(widget.familyId);
+      setState(() {
+        _templates = templates;
+        _children = children;
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
   }
 
   Color _severityColor(String severity) {
