@@ -145,4 +145,42 @@ class TaskService {
       'assigned_to': assignedTo,
     });
   }
+
+  static const _defaultTasks = [
+    {'icon': '🦷', 'title': 'Escovar os dentes apos as refeicoes', 'xp': 10, 'category': 'hygiene'},
+    {'icon': '🛏️', 'title': 'Arrumar a cama', 'xp': 10, 'category': 'organization'},
+    {'icon': '☕', 'title': 'Tomar cafe da manha', 'xp': 5, 'category': 'health'},
+    {'icon': '📚', 'title': 'Fazer o dever de casa', 'xp': 20, 'category': 'study'},
+    {'icon': '🍽️', 'title': 'Almocar', 'xp': 5, 'category': 'health'},
+    {'icon': '🚿', 'title': 'Tomar banho', 'xp': 10, 'category': 'hygiene'},
+    {'icon': '🧸', 'title': 'Arrumar os brinquedos', 'xp': 10, 'category': 'organization'},
+    {'icon': '🧼', 'title': 'Lavar as maos antes de comer', 'xp': 5, 'category': 'hygiene'},
+    {'icon': '💇', 'title': 'Pentear o cabelo', 'xp': 5, 'category': 'hygiene'},
+    {'icon': '👕', 'title': 'Guardar a roupa suja no cesto', 'xp': 5, 'category': 'organization'},
+    {'icon': '🍽️', 'title': 'Colocar o prato na pia apos comer', 'xp': 5, 'category': 'responsibility'},
+    {'icon': '🎒', 'title': 'Guardar o material escolar na mochila', 'xp': 10, 'category': 'organization'},
+    {'icon': '👔', 'title': 'Preparar a roupa do dia seguinte', 'xp': 10, 'category': 'organization'},
+    {'icon': '🐾', 'title': 'Dar comida/agua pro pet', 'xp': 10, 'category': 'responsibility'},
+    {'icon': '📖', 'title': 'Ler por 15 minutos', 'xp': 15, 'category': 'study'},
+    {'icon': '🎹', 'title': 'Praticar instrumento ou atividade extra', 'xp': 15, 'category': 'study'},
+    {'icon': '🍴', 'title': 'Ajudar a por ou tirar a mesa', 'xp': 10, 'category': 'social'},
+    {'icon': '🙏', 'title': 'Dizer obrigado e por favor', 'xp': 5, 'category': 'social'},
+  ];
+
+  static Future<void> createDefaultTasks({required String familyId}) async {
+    final existing = await getTaskTemplates(familyId);
+    if (existing.isNotEmpty) return;
+
+    for (final task in _defaultTasks) {
+      await _client.from('task_templates').insert({
+        'family_id': familyId,
+        'title': task['title'],
+        'icon': task['icon'],
+        'xp_reward': task['xp'],
+        'money_reward': 0,
+        'frequency': 'daily',
+        'category': task['category'],
+      });
+    }
+  }
 }

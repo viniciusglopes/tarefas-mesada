@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../models/child.dart';
 import '../../services/child_service.dart';
+import '../../services/task_service.dart';
 
 class ManageChildrenScreen extends StatefulWidget {
   final String familyId;
@@ -159,6 +160,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String gender = 'M';
     String avatar = '🧒';
     String avatarCategory = 'people';
+    DateTime? birthDate;
 
     final avatarCategories = <String, List<String>>{
       'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾'],
@@ -235,6 +237,39 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                   obscureText: true,
                 ),
                 const SizedBox(height: 12),
+                const Text('Data de Nascimento', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: birthDate ?? DateTime(2018, 1, 1),
+                      firstDate: DateTime(2005),
+                      lastDate: DateTime.now(),
+                      locale: const Locale('pt', 'BR'),
+                    );
+                    if (picked != null) setSheetState(() => birthDate = picked);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cake, size: 20, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
+                        Text(
+                          birthDate != null ? '${birthDate!.day.toString().padLeft(2, '0')}/${birthDate!.month.toString().padLeft(2, '0')}/${birthDate!.year}' : 'Selecione a data',
+                          style: TextStyle(color: birthDate != null ? AppColors.textPrimary : AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 const Text('Genero', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 6),
                 Row(
@@ -276,9 +311,11 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                         username: usernameCtrl.text.trim().toLowerCase(),
                         pin: pinCtrl.text,
                         gender: gender,
+                        birthDate: birthDate,
                         avatarUrl: avatar,
                       );
                       _load();
+                      _showDefaultTasksPrompt();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.parentBlue,
@@ -291,6 +328,48 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showDefaultTasksPrompt() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Tarefas Padrao'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('📋', style: TextStyle(fontSize: 48)),
+            SizedBox(height: 12),
+            Text(
+              'Deseja cadastrar tarefas padrao do dia a dia?\n\nInclui escovar os dentes, arrumar a cama, fazer o dever de casa e mais.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Nao, obrigado'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await TaskService.createDefaultTasks(familyId: widget.familyId);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('18 tarefas padrao cadastradas!'), backgroundColor: AppColors.success),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.childGreen, foregroundColor: Colors.white),
+            child: const Text('Sim, cadastrar!'),
+          ),
+        ],
       ),
     );
   }
