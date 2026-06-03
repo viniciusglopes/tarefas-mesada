@@ -37,7 +37,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     _loadData();
   }
 
-  String get _familyId => _parent?['family_id'] ?? '';
+  String get _familyId => _parent?['family_id'] as String? ?? '';
 
   Future<void> _loadData() async {
     try {

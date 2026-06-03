@@ -44,15 +44,8 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _children.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text('👶', style: TextStyle(fontSize: 48)),
-                      SizedBox(height: 8),
-                      Text('Nenhum filho cadastrado', style: TextStyle(color: AppColors.textSecondary)),
-                    ],
-                  ),
+              ? const Center(
+                  child: Text('Nenhum filho cadastrado', style: TextStyle(color: AppColors.textSecondary)),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -380,6 +373,12 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                         );
                         return;
                       }
+                      if (widget.familyId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Erro: dados da familia nao carregados. Volte e tente novamente.'), backgroundColor: AppColors.danger),
+                        );
+                        return;
+                      }
                       try {
                         Navigator.pop(ctx);
                         await ChildService.createChild(
@@ -395,9 +394,17 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                         _showDefaultTasksPrompt();
                       } catch (e) {
                         if (mounted) {
-                          final msg = e.toString().contains('duplicate') || e.toString().contains('unique')
-                              ? 'Username ja existe. Escolha outro.'
-                              : 'Erro ao cadastrar: $e';
+                          final err = e.toString();
+                          final String msg;
+                          if (err.contains('duplicate') || err.contains('unique') || err.contains('23505')) {
+                            msg = 'Username ja existe. Escolha outro.';
+                          } else if (err.contains('uuid') || err.contains('22P02')) {
+                            msg = 'Erro interno. Volte para a tela inicial e tente novamente.';
+                          } else if (err.contains('Unauthorized')) {
+                            msg = 'Voce nao tem permissao para cadastrar nesta familia.';
+                          } else {
+                            msg = 'Nao foi possivel cadastrar. Tente novamente.';
+                          }
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
                           );
