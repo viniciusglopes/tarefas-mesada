@@ -56,39 +56,54 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           .eq('family_id', parent['family_id'])
           .order('name');
 
-      final pending = await client
-          .from('tasks')
-          .select('*, task_templates(*)')
-          .eq('family_id', parent['family_id'])
-          .eq('status', 'completed')
-          .order('completed_at');
-
-      final today = DateTime.now().toIso8601String().split('T').first;
-      final todayTasks = await client
-          .from('tasks')
-          .select('*, task_templates(*)')
-          .eq('family_id', parent['family_id'])
-          .eq('date', today);
-
-      int unread = 0;
       final childList = (children as List).map((e) => Child.fromJson(e)).toList();
-      for (final child in childList) {
-        final msgs = await client
-            .from('messages')
-            .select('id')
-            .eq('family_id', parent['family_id'])
-            .eq('child_id', child.id)
-            .eq('is_from_parent', false)
-            .eq('is_read', false);
-        unread += (msgs as List).length;
-      }
 
       setState(() {
         _parent = parent;
         _children = childList;
-        _pendingTasks = (pending as List).map((e) => Task.fromJson(e)).toList();
-        _todayTasks = (todayTasks as List).map((e) => Task.fromJson(e)).toList();
-        _pendingApprovals = _pendingTasks.length;
+      });
+
+      List<Task> pendingList = [];
+      List<Task> todayList = [];
+      int unread = 0;
+
+      try {
+        final pending = await client
+            .from('tasks')
+            .select('*, task_templates(*)')
+            .eq('family_id', parent['family_id'])
+            .eq('status', 'completed')
+            .order('completed_at');
+        pendingList = (pending as List).map((e) => Task.fromJson(e)).toList();
+      } catch (_) {}
+
+      try {
+        final today = DateTime.now().toIso8601String().split('T').first;
+        final todayTasks = await client
+            .from('tasks')
+            .select('*, task_templates(*)')
+            .eq('family_id', parent['family_id'])
+            .eq('date', today);
+        todayList = (todayTasks as List).map((e) => Task.fromJson(e)).toList();
+      } catch (_) {}
+
+      try {
+        for (final child in childList) {
+          final msgs = await client
+              .from('messages')
+              .select('id')
+              .eq('family_id', parent['family_id'])
+              .eq('child_id', child.id)
+              .eq('is_from_parent', false)
+              .eq('is_read', false);
+          unread += (msgs as List).length;
+        }
+      } catch (_) {}
+
+      setState(() {
+        _pendingTasks = pendingList;
+        _todayTasks = todayList;
+        _pendingApprovals = pendingList.length;
         _unreadMessages = unread;
         _loading = false;
       });
