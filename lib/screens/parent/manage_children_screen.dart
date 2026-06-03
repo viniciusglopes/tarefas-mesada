@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../core/theme.dart';
 import '../../models/child.dart';
 import '../../services/child_service.dart';
 import '../../services/task_service.dart';
+import '../../services/supabase_service.dart';
 
 class ManageChildrenScreen extends StatefulWidget {
   final String familyId;
@@ -153,6 +156,25 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     );
   }
 
+  Future<String?> _uploadPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400, imageQuality: 80);
+    if (picked == null) return null;
+
+    final bytes = await picked.readAsBytes();
+    final ext = picked.name.split('.').last;
+    final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+    await SupabaseService.client.storage.from('avatars').uploadBinary(
+      fileName,
+      bytes,
+      fileOptions: FileOptions(contentType: 'image/$ext'),
+    );
+
+    final url = SupabaseService.client.storage.from('avatars').getPublicUrl(fileName);
+    return url;
+  }
+
   void _showAddChild() {
     final nameCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
@@ -161,13 +183,16 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String avatar = '🧒';
     String avatarCategory = 'people';
     DateTime? birthDate;
+    String? photoUrl;
+    bool uploadingPhoto = false;
 
     final avatarCategories = <String, List<String>>{
-      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾'],
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'],
+      'blond': ['👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️', '👱🏼', '👱🏼‍♂️', '👱🏼‍♀️', '👱🏽', '👱🏽‍♂️', '👱🏽‍♀️'],
       'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
       'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
     };
-    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
+    final categoryLabels = {'people': 'Criancas', 'blond': 'Loiros', 'characters': 'Personagens', 'animals': 'Animais'};
 
     showModalBottomSheet(
       context: context,
@@ -183,15 +208,68 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
               children: [
                 const Text('Adicionar Filho', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                const Text('Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const Text('Foto ou Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: uploadingPhoto ? null : () async {
+                    setSheetState(() => uploadingPhoto = true);
+                    try {
+                      final url = await _uploadPhoto();
+                      if (url != null) {
+                        setSheetState(() { photoUrl = url; avatar = url; });
+                      } else {
+                        setSheetState(() => uploadingPhoto = false);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erro ao enviar foto: $e'), backgroundColor: AppColors.danger),
+                        );
+                      }
+                    }
+                    setSheetState(() => uploadingPhoto = false);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: photoUrl != null ? AppColors.parentBlue.withValues(alpha: 0.08) : AppColors.parentBlue.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: photoUrl != null ? AppColors.parentBlue : AppColors.parentBlue.withValues(alpha: 0.4), width: photoUrl != null ? 2 : 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        if (photoUrl != null)
+                          CircleAvatar(radius: 24, backgroundImage: NetworkImage(photoUrl!))
+                        else
+                          CircleAvatar(radius: 24, backgroundColor: AppColors.parentBlue.withValues(alpha: 0.15), child: const Icon(Icons.add_a_photo, color: AppColors.parentBlue, size: 22)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(photoUrl != null ? 'Foto selecionada' : 'Enviar foto da crianca', style: TextStyle(color: AppColors.parentBlue, fontWeight: FontWeight.w600, fontSize: 14)),
+                              if (photoUrl == null)
+                                const Text('Toque para escolher uma foto do dispositivo', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                        if (uploadingPhoto) const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        else if (photoUrl == null) const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.parentBlue),
+                      ],
+                    ),
+                  ),
+                ),
+                const Text('Ou escolha um avatar:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
                 Row(
                   children: categoryLabels.entries.map((entry) => Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
                       label: Text(entry.value, style: const TextStyle(fontSize: 12)),
                       selected: avatarCategory == entry.key,
-                      onSelected: (_) => setSheetState(() => avatarCategory = entry.key),
+                      onSelected: (_) => setSheetState(() { avatarCategory = entry.key; photoUrl = null; }),
                       selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -202,15 +280,15 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: avatarCategories[avatarCategory]!.map((e) => GestureDetector(
-                    onTap: () => setSheetState(() => avatar = e),
+                    onTap: () => setSheetState(() { avatar = e; photoUrl = null; }),
                     child: Container(
                       width: 52,
                       height: 52,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: avatar == e ? AppColors.childGreen : AppColors.border,
-                          width: avatar == e ? 2 : 1,
+                          color: avatar == e && photoUrl == null ? AppColors.childGreen : AppColors.border,
+                          width: avatar == e && photoUrl == null ? 2 : 1,
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -242,11 +320,10 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                 GestureDetector(
                   onTap: () async {
                     final picked = await showDatePicker(
-                      context: ctx,
+                      context: context,
                       initialDate: birthDate ?? DateTime(2018, 1, 1),
                       firstDate: DateTime(2005),
                       lastDate: DateTime.now(),
-                      locale: const Locale('pt', 'BR'),
                     );
                     if (picked != null) setSheetState(() => birthDate = picked);
                   },
@@ -381,19 +458,23 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String gender = child.gender ?? 'M';
     String allowanceFreq = child.allowanceFrequency;
     String avatarCategory = 'people';
+    String? photoUrl = (avatar.startsWith('http')) ? avatar : null;
+    bool uploadingPhoto = false;
 
     final avatarCategories = <String, List<String>>{
-      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾'],
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'],
+      'blond': ['👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️', '👱🏼', '👱🏼‍♂️', '👱🏼‍♀️', '👱🏽', '👱🏽‍♂️', '👱🏽‍♀️'],
       'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
       'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
     };
-    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
+    final categoryLabels = {'people': 'Criancas', 'blond': 'Loiros', 'characters': 'Personagens', 'animals': 'Animais'};
 
-    // Detect which category the current avatar belongs to
-    for (final entry in avatarCategories.entries) {
-      if (entry.value.contains(avatar)) {
-        avatarCategory = entry.key;
-        break;
+    if (photoUrl == null) {
+      for (final entry in avatarCategories.entries) {
+        if (entry.value.contains(avatar)) {
+          avatarCategory = entry.key;
+          break;
+        }
       }
     }
 
@@ -411,15 +492,66 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
               children: [
                 Text('Editar ${child.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                const Text('Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const Text('Foto ou Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: uploadingPhoto ? null : () async {
+                    setSheetState(() => uploadingPhoto = true);
+                    try {
+                      final url = await _uploadPhoto();
+                      if (url != null) {
+                        setSheetState(() { photoUrl = url; avatar = url; });
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erro ao enviar foto: $e'), backgroundColor: AppColors.danger),
+                        );
+                      }
+                    }
+                    setSheetState(() => uploadingPhoto = false);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(
+                      color: photoUrl != null ? AppColors.parentBlue.withValues(alpha: 0.08) : AppColors.parentBlue.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: photoUrl != null ? AppColors.parentBlue : AppColors.parentBlue.withValues(alpha: 0.4), width: photoUrl != null ? 2 : 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        if (photoUrl != null)
+                          CircleAvatar(radius: 24, backgroundImage: NetworkImage(photoUrl!))
+                        else
+                          CircleAvatar(radius: 24, backgroundColor: AppColors.parentBlue.withValues(alpha: 0.15), child: const Icon(Icons.add_a_photo, color: AppColors.parentBlue, size: 22)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(photoUrl != null ? 'Foto selecionada' : 'Enviar foto da crianca', style: TextStyle(color: AppColors.parentBlue, fontWeight: FontWeight.w600, fontSize: 14)),
+                              if (photoUrl == null)
+                                const Text('Toque para escolher uma foto do dispositivo', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                        if (uploadingPhoto) const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        else if (photoUrl == null) const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.parentBlue),
+                      ],
+                    ),
+                  ),
+                ),
+                const Text('Ou escolha um avatar:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
                 Row(
                   children: categoryLabels.entries.map((entry) => Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
                       label: Text(entry.value, style: const TextStyle(fontSize: 12)),
                       selected: avatarCategory == entry.key,
-                      onSelected: (_) => setSheetState(() => avatarCategory = entry.key),
+                      onSelected: (_) => setSheetState(() { avatarCategory = entry.key; photoUrl = null; }),
                       selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
                       visualDensity: VisualDensity.compact,
                     ),
@@ -430,15 +562,15 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: avatarCategories[avatarCategory]!.map((e) => GestureDetector(
-                    onTap: () => setSheetState(() => avatar = e),
+                    onTap: () => setSheetState(() { avatar = e; photoUrl = null; }),
                     child: Container(
                       width: 52,
                       height: 52,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: avatar == e ? AppColors.childGreen : AppColors.border,
-                          width: avatar == e ? 2 : 1,
+                          color: avatar == e && photoUrl == null ? AppColors.childGreen : AppColors.border,
+                          width: avatar == e && photoUrl == null ? 2 : 1,
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),

@@ -62,3 +62,24 @@ class AppTheme {
     );
   }
 }
+
+class AvatarWidget extends StatelessWidget {
+  final String? avatarUrl;
+  final double size;
+
+  const AvatarWidget({super.key, this.avatarUrl, this.size = 28});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = avatarUrl;
+    if (url != null && url.startsWith('http')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size),
+        child: Image.network(url, width: size * 1.5, height: size * 1.5, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Text('🧒', style: TextStyle(fontSize: size)),
+        ),
+      );
+    }
+    return Text(url ?? '🧒', style: TextStyle(fontSize: size));
+  }
+}

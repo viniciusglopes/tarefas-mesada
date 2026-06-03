@@ -44,6 +44,7 @@ dependencies:
   shimmer: ^3.0.0
   crypto: ^3.0.7
   shared_preferences: ^2.3.5
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
