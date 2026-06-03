@@ -93,7 +93,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
         _loading = false;
       });
     } catch (e) {
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _parent = null;
+      });
     }
   }
 
@@ -127,6 +130,27 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_parent == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+              const SizedBox(height: 12),
+              const Text('Nao foi possivel carregar seus dados', style: TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () { setState(() => _loading = true); _loadData(); },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar novamente'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.parentBlue, foregroundColor: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -226,8 +250,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      const Text('👶', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: 8),
                       const Text('Nenhum filho cadastrado'),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
