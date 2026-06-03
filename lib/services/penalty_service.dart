@@ -44,6 +44,7 @@ class PenaltyService {
     String severity = 'light',
     int xpDiscount = 0,
     double moneyDiscount = 0,
+    String? category,
   }) async {
     await _client.from('penalty_templates').update({
       'title': title,
@@ -51,6 +52,7 @@ class PenaltyService {
       'severity': severity,
       'xp_discount': xpDiscount,
       'money_discount': moneyDiscount,
+      'category': category,
     }).eq('id', templateId);
   }
 

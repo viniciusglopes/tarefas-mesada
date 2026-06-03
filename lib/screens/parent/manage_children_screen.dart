@@ -71,9 +71,49 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                               child: Text(child.avatarUrl ?? '🧒', style: const TextStyle(fontSize: 28)),
                             ),
                             title: Text(child.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text(
-                              '@${child.username} • Nivel ${child.level} • ${child.xp} XP',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Nivel ${child.level} • ${child.xp} XP',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.parentBlue.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '@${child.username}',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.parentBlue),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.textSecondary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(Icons.lock_outline, size: 12, color: AppColors.textSecondary),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            'PIN: ****',
+                                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.edit, color: AppColors.parentBlue),
@@ -118,8 +158,14 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     final pinCtrl = TextEditingController();
     String gender = 'M';
     String avatar = '🧒';
+    String avatarCategory = 'people';
 
-    final avatars = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'];
+    final avatarCategories = <String, List<String>>{
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾'],
+      'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
+      'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
+    };
+    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
 
     showModalBottomSheet(
       context: context,
@@ -137,13 +183,28 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                 const SizedBox(height: 16),
                 const Text('Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
+                Row(
+                  children: categoryLabels.entries.map((entry) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(entry.value, style: const TextStyle(fontSize: 12)),
+                      selected: avatarCategory == entry.key,
+                      onSelected: (_) => setSheetState(() => avatarCategory = entry.key),
+                      selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: avatars.map((e) => GestureDetector(
+                  children: avatarCategories[avatarCategory]!.map((e) => GestureDetector(
                     onTap: () => setSheetState(() => avatar = e),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: avatar == e ? AppColors.childGreen : AppColors.border,
@@ -240,8 +301,22 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String avatar = child.avatarUrl ?? '🧒';
     String gender = child.gender ?? 'M';
     String allowanceFreq = child.allowanceFrequency;
+    String avatarCategory = 'people';
 
-    final avatars = ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿'];
+    final avatarCategories = <String, List<String>>{
+      'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾'],
+      'characters': ['🦸', '🦸‍♂️', '🦸‍♀️', '🧙', '🧙‍♂️', '🧙‍♀️', '🧛', '🧜‍♀️', '🧝', '🧝‍♀️', '🤴', '👸'],
+      'animals': ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄'],
+    };
+    final categoryLabels = {'people': 'Pessoas', 'characters': 'Personagens', 'animals': 'Animais'};
+
+    // Detect which category the current avatar belongs to
+    for (final entry in avatarCategories.entries) {
+      if (entry.value.contains(avatar)) {
+        avatarCategory = entry.key;
+        break;
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -259,13 +334,28 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                 const SizedBox(height: 16),
                 const Text('Avatar', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
+                Row(
+                  children: categoryLabels.entries.map((entry) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(entry.value, style: const TextStyle(fontSize: 12)),
+                      selected: avatarCategory == entry.key,
+                      onSelected: (_) => setSheetState(() => avatarCategory = entry.key),
+                      selectedColor: AppColors.childGreen.withValues(alpha: 0.2),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: avatars.map((e) => GestureDetector(
+                  children: avatarCategories[avatarCategory]!.map((e) => GestureDetector(
                     onTap: () => setSheetState(() => avatar = e),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: avatar == e ? AppColors.childGreen : AppColors.border,
@@ -446,13 +536,29 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
             children: [
               Text('Permissoes de ${child.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              ...labels.entries.map((e) => SwitchListTile(
-                title: Text(e.value, style: const TextStyle(fontSize: 14)),
-                value: values[e.key]!,
-                onChanged: (v) => setSheetState(() => values[e.key] = v),
-                activeTrackColor: AppColors.parentBlue,
-                dense: true,
-              )),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: labels.entries.map((e) => GestureDetector(
+                  onTap: () => setSheetState(() => values[e.key] = !values[e.key]!),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: values[e.key]! ? AppColors.success : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      e.value,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: values[e.key]! ? Colors.white : Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                )).toList(),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

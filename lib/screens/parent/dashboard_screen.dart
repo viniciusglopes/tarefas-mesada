@@ -12,6 +12,7 @@ import 'manage_children_screen.dart';
 import 'messages_screen.dart';
 import 'tasks_screen.dart';
 import 'allowance_screen.dart';
+import 'reports_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -24,7 +25,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   Map<String, dynamic>? _parent;
   List<Child> _children = [];
   List<Task> _pendingTasks = [];
+  List<Task> _todayTasks = [];
   int _pendingApprovals = 0;
+  int _unreadMessages = 0;
   bool _loading = true;
   int _currentIndex = 0;
 
@@ -60,11 +63,33 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           .eq('status', 'completed')
           .order('completed_at');
 
+      final today = DateTime.now().toIso8601String().split('T').first;
+      final todayTasks = await client
+          .from('tasks')
+          .select('*, task_templates(*)')
+          .eq('family_id', parent['family_id'])
+          .eq('date', today);
+
+      int unread = 0;
+      final childList = (children as List).map((e) => Child.fromJson(e)).toList();
+      for (final child in childList) {
+        final msgs = await client
+            .from('messages')
+            .select('id')
+            .eq('family_id', parent['family_id'])
+            .eq('child_id', child.id)
+            .eq('is_from_parent', false)
+            .eq('is_read', false);
+        unread += (msgs as List).length;
+      }
+
       setState(() {
         _parent = parent;
-        _children = (children as List).map((e) => Child.fromJson(e)).toList();
+        _children = childList;
         _pendingTasks = (pending as List).map((e) => Task.fromJson(e)).toList();
+        _todayTasks = (todayTasks as List).map((e) => Task.fromJson(e)).toList();
         _pendingApprovals = _pendingTasks.length;
+        _unreadMessages = unread;
         _loading = false;
       });
     } catch (e) {
@@ -79,12 +104,16 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     return 'Boa noite';
   }
 
+  int get _todayCompleted => _todayTasks.where((t) => t.status == TaskStatus.approved).length;
+  int get _todayTotal => _todayTasks.length;
+  String get _completionPercent => _todayTotal == 0 ? '0%' : '${(_todayCompleted * 100 / _todayTotal).round()}%';
+
   Widget _buildCurrentScreen() {
     switch (_currentIndex) {
       case 1:
         return _buildApprovalsScreen();
       case 2:
-        return ManageChildrenScreen(familyId: _familyId);
+        return ReportsScreen(familyId: _familyId, children: _children);
       case 3:
         return ParentMessagesScreen(familyId: _familyId);
       case 4:
@@ -118,8 +147,15 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ),
             label: 'Aprovar',
           ),
-          const NavigationDestination(icon: Icon(Icons.people), label: 'Filhos'),
-          const NavigationDestination(icon: Icon(Icons.chat), label: 'Mensagens'),
+          const NavigationDestination(icon: Icon(Icons.bar_chart), label: 'Relatorios'),
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible: _unreadMessages > 0,
+              label: Text('$_unreadMessages'),
+              child: const Icon(Icons.chat),
+            ),
+            label: 'Mensagens',
+          ),
           const NavigationDestination(icon: Icon(Icons.settings), label: 'Config'),
         ],
       ),
@@ -136,11 +172,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             Text(
               '${_greeting()}, ${_parent?['name'] ?? ''}! 👋',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Familia ${_parent?['family_id'] != null ? '' : ''}',
-              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
 
@@ -173,7 +204,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
               children: [
                 _MetricCard(value: '$_pendingApprovals', label: 'Aprovacoes\npendentes', color: AppColors.warning),
                 const SizedBox(width: 12),
-                _MetricCard(value: '${_children.length}', label: 'Filhos\ncadastrados', color: AppColors.childGreen),
+                _MetricCard(value: _completionPercent, label: 'Conclusao\nhoje', color: AppColors.childGreen),
                 const SizedBox(width: 12),
                 _MetricCard(
                   value: 'R\$ ${_children.fold<double>(0, (sum, c) => sum + c.balance).toStringAsFixed(0)}',
@@ -200,7 +231,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       const Text('Nenhum filho cadastrado'),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
-                        onPressed: () => setState(() => _currentIndex = 2),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManageChildrenScreen(familyId: _familyId))),
                         icon: const Icon(Icons.add),
                         label: const Text('Adicionar Filho'),
                         style: ElevatedButton.styleFrom(
@@ -246,46 +277,78 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       .map((c) => c.name)
                       .firstOrNull ?? 'Filho';
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                  return Dismissible(
+                    key: Key(task.id),
+                    background: Container(
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 24),
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check, color: Colors.white, size: 28),
+                          SizedBox(width: 8),
+                          Text('Aprovar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Text(task.template?.icon ?? '📋', style: const TextStyle(fontSize: 32)),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(task.template?.title ?? 'Tarefa', style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text(childName, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              Text(
-                                '+${task.template?.xpReward ?? 0} XP • R\$ ${(task.template?.moneyReward ?? 0).toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.xpPurple),
-                              ),
-                            ],
+                    secondaryBackground: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 24),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text('Rejeitar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          SizedBox(width: 8),
+                          Icon(Icons.close, color: Colors.white, size: 28),
+                        ],
+                      ),
+                    ),
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.startToEnd) {
+                        await TaskService.approveTask(task.id, SupabaseService.currentUser!.id);
+                        _loadData();
+                        return true;
+                      } else {
+                        await TaskService.rejectTask(task.id);
+                        _loadData();
+                        return true;
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(task.template?.icon ?? '📋', style: const TextStyle(fontSize: 32)),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(task.template?.title ?? 'Tarefa', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                Text(childName, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                Text(
+                                  '+${task.template?.xpReward ?? 0} XP • R\$ ${(task.template?.moneyReward ?? 0).toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.xpPurple),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: AppColors.danger),
-                          onPressed: () async {
-                            await TaskService.rejectTask(task.id);
-                            _loadData();
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.check, color: AppColors.success),
-                          onPressed: () async {
-                            await TaskService.approveTask(task.id, SupabaseService.currentUser!.id);
-                            _loadData();
-                          },
-                        ),
-                      ],
+                          const Icon(Icons.swipe, size: 20, color: AppColors.textSecondary),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -349,7 +412,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             icon: Icons.people,
             title: 'Gerenciar Filhos',
             subtitle: 'Adicionar, editar e permissoes',
-            onTap: () => setState(() => _currentIndex = 2),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ManageChildrenScreen(familyId: _familyId))),
           ),
           const SizedBox(height: 24),
           SizedBox(

@@ -188,6 +188,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                             ),
                                           ],
                                         ),
+                                        if (!canAfford)
+                                          Text(
+                                            'Faltam R\$ ${(reward.price - _balance).toStringAsFixed(2)}',
+                                            style: const TextStyle(fontSize: 11, color: AppColors.danger),
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -251,10 +256,36 @@ class _ShopScreenState extends State<ShopScreen> {
               if (success) {
                 setState(() => _balance -= reward.price);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${reward.icon} ${reward.title} resgatado!'),
-                      backgroundColor: AppColors.success,
+                  showDialog(
+                    context: context,
+                    builder: (ctx2) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🎉🎊🥳', style: TextStyle(fontSize: 48)),
+                          const SizedBox(height: 12),
+                          const Text('Resgate feito!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Text(reward.icon, style: const TextStyle(fontSize: 48)),
+                          Text(reward.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Novo saldo: R\$ ${_balance.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 14, color: AppColors.childGreen, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx2),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.childGreen, foregroundColor: Colors.white),
+                            child: const Text('Fechar'),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }

@@ -19,6 +19,16 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
   List<PenaltyTemplate> _templates = [];
   List<Child> _children = [];
   bool _loading = true;
+  String _selectedCategory = 'all';
+
+  static const Map<String, String> _categoryLabels = {
+    'all': 'Todas',
+    'behavior': 'Comportamento',
+    'study': 'Estudo',
+    'organization': 'Organizacao',
+    'technology': 'Tecnologia',
+    'social': 'Convivencia',
+  };
 
   @override
   void initState() {
@@ -179,134 +189,207 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _templates.length,
-      itemBuilder: (context, index) {
-        final t = _templates[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _severityColor(t.severity).withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            children: [
-              Text(t.icon, style: const TextStyle(fontSize: 32)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(t.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: _severityColor(t.severity).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            _severityLabel(t.severity),
-                            style: TextStyle(fontSize: 11, color: _severityColor(t.severity), fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (t.xpDiscount > 0) Text('-${t.xpDiscount} XP', style: const TextStyle(fontSize: 12, color: AppColors.danger)),
-                        if (t.xpDiscount > 0 && t.moneyDiscount > 0) const Text(' • ', style: TextStyle(color: AppColors.textSecondary)),
-                        if (t.moneyDiscount > 0) Text('-R\$ ${t.moneyDiscount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: AppColors.danger)),
-                      ],
-                    ),
-                  ],
+    final filteredTemplates = _selectedCategory == 'all'
+        ? _templates
+        : _templates.where((t) => t.category == _selectedCategory).toList();
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 50,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            children: _categoryLabels.entries.map((entry) {
+              final selected = _selectedCategory == entry.key;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(entry.value),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _selectedCategory = entry.key),
+                  selectedColor: AppColors.danger.withValues(alpha: 0.15),
+                  checkmarkColor: AppColors.danger,
+                  labelStyle: TextStyle(
+                    color: selected ? AppColors.danger : AppColors.textSecondary,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, color: AppColors.parentBlue, size: 22),
-                onPressed: () => _showTemplateForm(template: t),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
-                onPressed: () async {
-                  await PenaltyService.deleteTemplate(t.id);
-                  _load();
-                },
-              ),
-            ],
+              );
+            }).toList(),
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: filteredTemplates.isEmpty
+              ? const Center(child: Text('Nenhum modelo nesta categoria', style: TextStyle(color: AppColors.textSecondary)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredTemplates.length,
+                  itemBuilder: (context, index) {
+                    final t = filteredTemplates[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _severityColor(t.severity).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(t.icon, style: const TextStyle(fontSize: 32)),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(t.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: _severityColor(t.severity).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        _severityLabel(t.severity),
+                                        style: TextStyle(fontSize: 11, color: _severityColor(t.severity), fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    if (t.xpDiscount > 0) Text('-${t.xpDiscount} XP', style: const TextStyle(fontSize: 12, color: AppColors.danger)),
+                                    if (t.xpDiscount > 0 && t.moneyDiscount > 0) const Text(' • ', style: TextStyle(color: AppColors.textSecondary)),
+                                    if (t.moneyDiscount > 0) Text('-R\$ ${t.moneyDiscount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: AppColors.danger)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, color: AppColors.parentBlue, size: 22),
+                            onPressed: () => _showTemplateForm(template: t),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 22),
+                            onPressed: () async {
+                              await PenaltyService.deleteTemplate(t.id);
+                              _load();
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
   void _confirmApply(Child child, PenaltyTemplate template) {
     final reasonController = TextEditingController();
+    String discountType = 'xp_and_money';
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Aplicar Penalidade'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(template.icon, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 8),
-            Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('Para: ${child.name}', style: const TextStyle(color: AppColors.textSecondary)),
-            const SizedBox(height: 12),
-            if (template.xpDiscount > 0)
-              Text('-${template.xpDiscount} XP', style: const TextStyle(color: AppColors.danger, fontSize: 16, fontWeight: FontWeight.bold)),
-            if (template.moneyDiscount > 0)
-              Text('-R\$ ${template.moneyDiscount.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.danger, fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: 'Motivo (opcional)',
-                border: OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Aplicar Penalidade'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(template.icon, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 8),
+              Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Para: ${child.name}', style: const TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+              if (template.xpDiscount > 0)
+                Text('-${template.xpDiscount} XP', style: const TextStyle(color: AppColors.danger, fontSize: 16, fontWeight: FontWeight.bold)),
+              if (template.moneyDiscount > 0)
+                Text('-R\$ ${template.moneyDiscount.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.danger, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Tipo de desconto:', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               ),
-              maxLines: 2,
+              RadioListTile<String>(
+                title: const Text('XP + Dinheiro', style: TextStyle(fontSize: 14)),
+                value: 'xp_and_money',
+                groupValue: discountType,
+                onChanged: (v) => setDialogState(() => discountType = v!),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                activeColor: AppColors.danger,
+              ),
+              RadioListTile<String>(
+                title: const Text('So XP', style: TextStyle(fontSize: 14)),
+                value: 'xp_only',
+                groupValue: discountType,
+                onChanged: (v) => setDialogState(() => discountType = v!),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                activeColor: AppColors.danger,
+              ),
+              RadioListTile<String>(
+                title: const Text('So Dinheiro', style: TextStyle(fontSize: 14)),
+                value: 'money_only',
+                groupValue: discountType,
+                onChanged: (v) => setDialogState(() => discountType = v!),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                activeColor: AppColors.danger,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  hintText: 'Motivo (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await PenaltyService.applyPenalty(
+                  childId: child.id,
+                  parentId: SupabaseService.currentUser!.id,
+                  templateId: template.id,
+                  xpLost: discountType == 'money_only' ? 0 : template.xpDiscount,
+                  moneyLost: discountType == 'xp_only' ? 0 : template.moneyDiscount,
+                  reason: reasonController.text.isEmpty ? null : reasonController.text,
+                  discountType: discountType,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Penalidade aplicada a ${child.name}'),
+                      backgroundColor: AppColors.danger,
+                    ),
+                  );
+                }
+                _load();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Aplicar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await PenaltyService.applyPenalty(
-                childId: child.id,
-                parentId: SupabaseService.currentUser!.id,
-                templateId: template.id,
-                xpLost: template.xpDiscount,
-                moneyLost: template.moneyDiscount,
-                reason: reasonController.text.isEmpty ? null : reasonController.text,
-              );
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Penalidade aplicada a ${child.name}'),
-                    backgroundColor: AppColors.danger,
-                  ),
-                );
-              }
-              _load();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Aplicar'),
-          ),
-        ],
       ),
     );
   }
@@ -318,6 +401,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
     final moneyCtrl = TextEditingController(text: template != null ? template.moneyDiscount.toStringAsFixed(2) : '0');
     String severity = template?.severity ?? 'light';
     String icon = template?.icon ?? '⚠️';
+    String? category = template?.category;
 
     final icons = ['⚠️', '🚫', '❌', '💢', '🔴', '⛔', '📵', '🗑️'];
 
@@ -379,6 +463,31 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
+                const Text('Categoria', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: _categoryLabels.entries
+                      .where((e) => e.key != 'all')
+                      .map((entry) {
+                    final selected = category == entry.key;
+                    return ChoiceChip(
+                      label: Text(entry.value),
+                      selected: selected,
+                      onSelected: (_) => setSheetState(() {
+                        category = selected ? null : entry.key;
+                      }),
+                      selectedColor: AppColors.danger.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(
+                        color: selected ? AppColors.danger : AppColors.textSecondary,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -413,6 +522,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                           severity: severity,
                           xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
                           moneyDiscount: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
+                          category: category,
                         );
                       } else {
                         await PenaltyService.createTemplate(
@@ -422,6 +532,7 @@ class _PenaltiesScreenState extends State<PenaltiesScreen> with SingleTickerProv
                           severity: severity,
                           xpDiscount: int.tryParse(xpCtrl.text) ?? 0,
                           moneyDiscount: double.tryParse(moneyCtrl.text.replaceAll(',', '.')) ?? 0,
+                          category: category,
                         );
                       }
                       _load();
