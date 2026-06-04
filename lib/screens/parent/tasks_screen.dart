@@ -52,11 +52,60 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
     }
   }
 
+  void _loadDefaultTasks() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Tarefas Padrao'),
+        content: const Text(
+          '18 tarefas do dia a dia: higiene, organizacao, saude, estudo, responsabilidade e convivencia.\n\nTarefas que ja existem nao serao duplicadas.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await TaskService.createDefaultTasks(familyId: widget.familyId);
+                _load();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Tarefas padrao cadastradas!'), backgroundColor: AppColors.success),
+                  );
+                }
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Erro ao cadastrar tarefas. Tente novamente.'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.childGreen, foregroundColor: Colors.white),
+            child: const Text('Cadastrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tarefas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.playlist_add_check),
+            tooltip: 'Tarefas padrao',
+            onPressed: _loadDefaultTasks,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -89,12 +138,19 @@ class _TasksManageScreenState extends State<TasksManageScreen> with SingleTicker
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text('📋', style: TextStyle(fontSize: 48)),
-            SizedBox(height: 8),
-            Text('Nenhuma tarefa cadastrada', style: TextStyle(color: AppColors.textSecondary)),
-            SizedBox(height: 4),
-            Text('Crie tarefas para seus filhos!', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          children: [
+            const Text('📋', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 8),
+            const Text('Nenhuma tarefa cadastrada', style: TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 4),
+            const Text('Crie tarefas para seus filhos!', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadDefaultTasks,
+              icon: const Icon(Icons.playlist_add_check),
+              label: const Text('Carregar tarefas padrao'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.parentBlue, foregroundColor: Colors.white),
+            ),
           ],
         ),
       );

@@ -167,12 +167,14 @@ class TaskService {
     {'icon': '🙏', 'title': 'Dizer obrigado e por favor', 'xp': 5, 'category': 'social'},
   ];
 
-  static Future<void> createDefaultTasks({required String familyId}) async {
+  static Future<List<String>> createDefaultTasks({required String familyId, String? assignToChildId}) async {
     final existing = await getTaskTemplates(familyId);
-    if (existing.isNotEmpty) return;
+    final existingTitles = existing.map((e) => e.title.toLowerCase()).toSet();
+    final createdIds = <String>[];
 
     for (final task in _defaultTasks) {
-      await _client.from('task_templates').insert({
+      if (existingTitles.contains((task['title'] as String).toLowerCase())) continue;
+      final result = await _client.from('task_templates').insert({
         'family_id': familyId,
         'title': task['title'],
         'icon': task['icon'],
@@ -180,7 +182,32 @@ class TaskService {
         'money_reward': 0,
         'frequency': 'daily',
         'category': task['category'],
-      });
+      }).select('id').single();
+      createdIds.add(result['id']);
     }
+
+    if (assignToChildId != null) {
+      final allTemplates = await getTaskTemplates(familyId);
+      final today = DateTime.now().toIso8601String().split('T').first;
+      final existingTasks = await _client
+          .from('tasks')
+          .select('template_id')
+          .eq('child_id', assignToChildId)
+          .eq('date', today);
+      final assignedTemplateIds = (existingTasks as List).map((e) => e['template_id']).toSet();
+
+      for (final template in allTemplates) {
+        if (assignedTemplateIds.contains(template.id)) continue;
+        await _client.from('tasks').insert({
+          'template_id': template.id,
+          'child_id': assignToChildId,
+          'family_id': familyId,
+          'date': today,
+          'status': 'pending',
+        });
+      }
+    }
+
+    return createdIds;
   }
 }

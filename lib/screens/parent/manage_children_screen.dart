@@ -470,8 +470,12 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                           avatarUrl: avatar,
                           avatarType: avatar.startsWith('http') ? 'photo' : 'emoji',
                         );
-                        _load();
-                        _showDefaultTasksPrompt();
+                        final children = await ChildService.getChildren(widget.familyId);
+                        setState(() { _children = children; _loading = false; });
+                        final newChild = children.where(
+                          (c) => c.username == usernameCtrl.text.trim().toLowerCase()
+                        ).firstOrNull;
+                        _showDefaultTasksPrompt(newChild?.id);
                       } catch (e) {
                         if (mounted) {
                           final err = e.toString();
@@ -506,7 +510,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     );
   }
 
-  void _showDefaultTasksPrompt() {
+  void _showDefaultTasksPrompt([String? childId]) {
     if (!mounted) return;
     showDialog(
       context: context,
@@ -533,7 +537,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await TaskService.createDefaultTasks(familyId: widget.familyId);
+              await TaskService.createDefaultTasks(familyId: widget.familyId, assignToChildId: childId);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('18 tarefas padrao cadastradas!'), backgroundColor: AppColors.success),
