@@ -32,7 +32,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> _load() async {
-    final msgs = await MessageService.getMessages(
+    final msgs = await MessageService.getMessagesRpc(
       familyId: widget.child.familyId,
       childId: widget.child.id,
     );
@@ -43,7 +43,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     _scrollToBottom();
 
     for (final msg in msgs.where((m) => !m.isRead && m.isFromParent)) {
-      await MessageService.markAsRead(msg.id);
+      await MessageService.markAsReadRpc(msg.id);
     }
   }
 
@@ -64,7 +64,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     if (text.isEmpty) return;
 
     _controller.clear();
-    await MessageService.sendFromChild(
+    await MessageService.sendFromChildRpc(
       familyId: widget.child.familyId,
       childId: widget.child.id,
       content: text,

@@ -52,6 +52,34 @@ class MessageService {
     }).eq('id', messageId);
   }
 
+  static Future<void> markAsReadRpc(String messageId) async {
+    await _client.rpc('mark_message_read', params: {'p_message_id': messageId});
+  }
+
+  static Future<List<Message>> getMessagesRpc({
+    required String familyId,
+    required String childId,
+  }) async {
+    final result = await _client.rpc('get_child_messages', params: {
+      'p_family_id': familyId,
+      'p_child_id': childId,
+    });
+    if (result == null) return [];
+    return (result as List).map((e) => Message.fromJson(Map<String, dynamic>.from(e))).toList();
+  }
+
+  static Future<void> sendFromChildRpc({
+    required String familyId,
+    required String childId,
+    required String content,
+  }) async {
+    await _client.rpc('send_child_message', params: {
+      'p_family_id': familyId,
+      'p_child_id': childId,
+      'p_content': content,
+    });
+  }
+
   static Future<int> getUnreadCount({
     required String familyId,
     required String childId,
