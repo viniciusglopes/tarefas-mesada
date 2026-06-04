@@ -88,6 +88,10 @@ class TaskService {
     }).eq('id', taskId);
   }
 
+  static Future<void> deleteTask(String taskId) async {
+    await _client.from('tasks').delete().eq('id', taskId);
+  }
+
   static Future<List<TaskTemplate>> getTaskTemplates(String familyId) async {
     final result = await _client
         .from('task_templates')

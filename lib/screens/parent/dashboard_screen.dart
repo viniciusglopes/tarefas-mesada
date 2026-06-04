@@ -13,6 +13,7 @@ import 'messages_screen.dart';
 import 'tasks_screen.dart';
 import 'allowance_screen.dart';
 import 'reports_screen.dart';
+import 'child_tasks_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -281,7 +282,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 ),
               )
             else
-              ..._children.map((child) => _ChildCard(child: child)),
+              ..._children.map((child) => _ChildCard(
+              child: child,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ChildTasksScreen(child: child)),
+              ).then((_) => _loadData()),
+            )),
           ],
         ),
       ),
@@ -568,14 +575,18 @@ class _SettingsTile extends StatelessWidget {
 
 class _ChildCard extends StatelessWidget {
   final Child child;
+  final VoidCallback? onTap;
 
-  const _ChildCard({required this.child});
+  const _ChildCard({required this.child, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
@@ -608,8 +619,11 @@ class _ChildCard extends StatelessWidget {
                 ),
                 child: Text('🔥 ${child.streak}', style: const TextStyle(fontSize: 12)),
               ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
           ],
         ),
+      ),
       ),
     );
   }
