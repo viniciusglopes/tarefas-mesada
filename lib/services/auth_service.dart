@@ -79,14 +79,13 @@ class AuthService {
   }) async {
     final pinHash = sha256.convert(utf8.encode(pin)).toString();
 
-    final result = await _client
-        .from('children')
-        .select()
-        .eq('username', username)
-        .eq('pin_hash', pinHash)
-        .maybeSingle();
+    final result = await _client.rpc('verify_child_login', params: {
+      'p_username': username.toLowerCase(),
+      'p_pin_hash': pinHash,
+    });
 
-    return result;
+    if (result == null) return null;
+    return Map<String, dynamic>.from(result as Map);
   }
 
   static String hashPin(String pin) {

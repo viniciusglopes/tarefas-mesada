@@ -240,6 +240,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String avatarCategory = 'people';
     DateTime? birthDate;
     String? photoUrl;
+    String? usernameError;
     bool uploadingPhoto = false;
 
     final avatarCategories = <String, List<String>>{
@@ -359,7 +360,22 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: usernameCtrl,
-                  decoration: const InputDecoration(labelText: 'Username (para login)'),
+                  decoration: InputDecoration(
+                    labelText: 'Username (para login)',
+                    errorText: usernameError,
+                    suffixIcon: usernameError == null && usernameCtrl.text.length >= 3
+                        ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                        : null,
+                  ),
+                  onChanged: (val) async {
+                    final u = val.trim().toLowerCase();
+                    if (u.length < 3) {
+                      setSheetState(() => usernameError = u.isEmpty ? null : 'Minimo 3 caracteres');
+                      return;
+                    }
+                    final taken = await ChildService.isUsernameTaken(u);
+                    setSheetState(() => usernameError = taken ? 'Username ja esta em uso' : null);
+                  },
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -534,6 +550,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
 
   void _showEditChild(Child child) {
     final nameCtrl = TextEditingController(text: child.name);
+    final usernameCtrl = TextEditingController(text: child.username);
     final allowanceCtrl = TextEditingController(text: child.allowanceAmount > 0 ? child.allowanceAmount.toStringAsFixed(2) : '');
     String avatar = child.avatarUrl ?? '🧒';
     String gender = child.gender ?? 'M';
@@ -541,6 +558,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
     String avatarCategory = 'people';
     String? photoUrl = (avatar.startsWith('http')) ? avatar : null;
     bool uploadingPhoto = false;
+    String? usernameError;
 
     final avatarCategories = <String, List<String>>{
       'people': ['🧒', '👦', '👧', '🧒🏻', '👦🏻', '👧🏻', '🧒🏼', '👦🏼', '👧🏼', '🧒🏽', '👦🏽', '👧🏽', '🧒🏾', '👦🏾', '👧🏾', '🧒🏿', '👦🏿', '👧🏿', '👱', '👱‍♂️', '👱‍♀️', '👱🏻', '👱🏻‍♂️', '👱🏻‍♀️'],
@@ -664,6 +682,30 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                   decoration: const InputDecoration(labelText: 'Nome'),
                 ),
                 const SizedBox(height: 12),
+                TextField(
+                  controller: usernameCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Username (para login)',
+                    errorText: usernameError,
+                    suffixIcon: usernameError == null && usernameCtrl.text.length >= 3
+                        ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                        : null,
+                  ),
+                  onChanged: (val) async {
+                    final u = val.trim().toLowerCase();
+                    if (u.length < 3) {
+                      setSheetState(() => usernameError = u.isEmpty ? null : 'Minimo 3 caracteres');
+                      return;
+                    }
+                    if (u == child.username.toLowerCase()) {
+                      setSheetState(() => usernameError = null);
+                      return;
+                    }
+                    final taken = await ChildService.isUsernameTaken(u, excludeChildId: child.id);
+                    setSheetState(() => usernameError = taken ? 'Username ja esta em uso' : null);
+                  },
+                ),
+                const SizedBox(height: 12),
                 const Text('Genero', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 const SizedBox(height: 6),
                 Row(
@@ -732,10 +774,19 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
+                          if (usernameError != null) return;
+                          final newUsername = usernameCtrl.text.trim().toLowerCase();
+                          if (newUsername.length < 3) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Username precisa ter no minimo 3 caracteres'), backgroundColor: AppColors.danger),
+                            );
+                            return;
+                          }
                           Navigator.pop(ctx);
                           await ChildService.updateChild(
                             childId: child.id,
                             name: nameCtrl.text.trim(),
+                            username: newUsername,
                             avatarUrl: avatar,
                             avatarType: avatar.startsWith('http') ? 'photo' : 'emoji',
                             gender: gender,

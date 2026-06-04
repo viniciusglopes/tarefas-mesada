@@ -47,9 +47,19 @@ class ChildService {
     });
   }
 
+  static Future<bool> isUsernameTaken(String username, {String? excludeChildId}) async {
+    var query = _client.from('children').select('id').eq('username', username.toLowerCase());
+    if (excludeChildId != null) {
+      query = query.neq('id', excludeChildId);
+    }
+    final result = await query;
+    return (result as List).isNotEmpty;
+  }
+
   static Future<void> updateChild({
     required String childId,
     String? name,
+    String? username,
     String? avatarUrl,
     String? avatarType,
     String? gender,
@@ -60,6 +70,7 @@ class ChildService {
       'updated_at': DateTime.now().toIso8601String(),
     };
     if (name != null) updates['name'] = name;
+    if (username != null) updates['username'] = username.toLowerCase();
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
     if (avatarType != null) updates['avatar_type'] = avatarType;
     if (gender != null) updates['gender'] = gender;
@@ -67,6 +78,10 @@ class ChildService {
     if (allowanceFrequency != null) updates['allowance_frequency'] = allowanceFrequency;
 
     await _client.from('children').update(updates).eq('id', childId);
+  }
+
+  static Future<void> deleteChild(String childId) async {
+    await _client.from('children').delete().eq('id', childId);
   }
 
   static Future<void> updatePin({
