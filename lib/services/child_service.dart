@@ -25,6 +25,14 @@ class ChildService {
     return Child.fromJson(result);
   }
 
+  static Future<Child?> getChildRpc(String childId) async {
+    final result = await _client.rpc('get_child_profile', params: {
+      'p_child_id': childId,
+    });
+    if (result == null) return null;
+    return Child.fromJson(Map<String, dynamic>.from(result));
+  }
+
   static Future<void> createChild({
     required String familyId,
     required String name,

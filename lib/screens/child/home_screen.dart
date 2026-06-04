@@ -24,6 +24,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
   List<Task> _tasks = [];
   bool _loading = true;
   int _currentIndex = 0;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -33,13 +34,13 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
   }
 
   Future<void> _refreshChild() async {
-    final updated = await ChildService.getChild(_child.id);
-    setState(() => _child = updated);
+    final updated = await ChildService.getChildRpc(_child.id);
+    if (updated != null) setState(() => _child = updated);
   }
 
   Future<void> _loadTasks() async {
     try {
-      final tasks = await TaskService.getTasksForChild(_child.id);
+      final tasks = await TaskService.getTasksForChildRpc(_child.id, date: _selectedDate);
       setState(() {
         _tasks = tasks;
         _loading = false;
@@ -50,6 +51,10 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
   }
 
   int get _completedCount => _tasks.where((t) => t.status != TaskStatus.pending).length;
+  bool get _isToday {
+    final now = DateTime.now();
+    return _selectedDate.year == now.year && _selectedDate.month == now.month && _selectedDate.day == now.day;
+  }
 
   Widget _buildCurrentScreen() {
     switch (_currentIndex) {
@@ -196,9 +201,64 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
             const SizedBox(height: 24),
 
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Tarefas de Hoje', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 22),
+                  onPressed: () {
+                    setState(() {
+                      _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                      _loading = true;
+                    });
+                    _loadTasks();
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() { _selectedDate = picked; _loading = true; });
+                      _loadTasks();
+                    }
+                  },
+                  child: Text(
+                    _isToday ? 'Tarefas de Hoje' : '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (!_isToday)
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right, size: 22),
+                    onPressed: () {
+                      final next = _selectedDate.add(const Duration(days: 1));
+                      if (!next.isAfter(DateTime.now())) {
+                        setState(() { _selectedDate = next; _loading = true; });
+                        _loadTasks();
+                      }
+                    },
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                const Spacer(),
+                if (!_isToday)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() { _selectedDate = DateTime.now(); _loading = true; });
+                      _loadTasks();
+                    },
+                    child: const Text('Hoje', style: TextStyle(fontSize: 13, color: AppColors.parentBlue, fontWeight: FontWeight.w600)),
+                  ),
+                const SizedBox(width: 8),
                 Text(
                   '$_completedCount/${_tasks.length}',
                   style: const TextStyle(fontSize: 14, color: AppColors.childGreen, fontWeight: FontWeight.w600),
@@ -237,8 +297,9 @@ class _ChildHomeScreenState extends State<ChildHomeScreen> {
               ..._tasks.map((task) => _TaskCard(
                 task: task,
                 onComplete: () async {
-                  await TaskService.completeTask(task.id);
+                  await TaskService.completeTaskRpc(task.id, _child.id);
                   _loadTasks();
+                  _refreshChild();
                 },
               )),
           ],

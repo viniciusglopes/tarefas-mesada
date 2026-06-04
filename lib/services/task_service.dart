@@ -18,6 +18,26 @@ class TaskService {
     return (result as List).map((e) => Task.fromJson(e)).toList();
   }
 
+  static Future<List<Task>> getTasksForChildRpc(String childId, {DateTime? date}) async {
+    final targetDate = date ?? DateTime.now();
+    final dateStr = targetDate.toIso8601String().split('T').first;
+
+    final result = await _client.rpc('get_child_tasks', params: {
+      'p_child_id': childId,
+      'p_date': dateStr,
+    });
+
+    if (result == null) return [];
+    return (result as List).map((e) => Task.fromJson(Map<String, dynamic>.from(e))).toList();
+  }
+
+  static Future<void> completeTaskRpc(String taskId, String childId) async {
+    await _client.rpc('complete_child_task', params: {
+      'p_task_id': taskId,
+      'p_child_id': childId,
+    });
+  }
+
   static Future<List<Task>> getPendingApprovals(String familyId) async {
     final result = await _client
         .from('tasks')
