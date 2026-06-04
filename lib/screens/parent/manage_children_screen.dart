@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../core/theme.dart';
 import '../../models/child.dart';
@@ -203,23 +203,25 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
   }
 
   Future<String?> _uploadPhoto() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      withData: true,
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
     );
-    if (result == null || result.files.isEmpty) return null;
+    if (image == null) return null;
 
-    final file = result.files.first;
-    final bytes = file.bytes;
-    if (bytes == null) return null;
-
-    final ext = file.extension ?? 'jpg';
+    final bytes = await image.readAsBytes();
+    final name = image.name;
+    final ext = name.contains('.') ? name.split('.').last : 'jpg';
     final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final mimeType = ext == 'png' ? 'image/png' : 'image/jpeg';
 
     await SupabaseService.client.storage.from('avatars').uploadBinary(
       fileName,
       bytes,
-      fileOptions: FileOptions(contentType: 'image/$ext'),
+      fileOptions: FileOptions(contentType: mimeType),
     );
 
     final url = SupabaseService.client.storage.from('avatars').getPublicUrl(fileName);
