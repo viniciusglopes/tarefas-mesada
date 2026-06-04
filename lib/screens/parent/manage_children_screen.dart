@@ -1,5 +1,6 @@
+import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../core/theme.dart';
 import '../../models/child.dart';
@@ -203,20 +204,23 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
   }
 
   Future<String?> _uploadPhoto() async {
-    final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
-    );
-    if (image == null) return null;
+    final input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
 
-    final bytes = await image.readAsBytes();
-    final name = image.name;
-    final ext = name.contains('.') ? name.split('.').last : 'jpg';
+    await input.onChange.first;
+    if (input.files == null || input.files!.isEmpty) return null;
+    final file = input.files!.first;
+
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(file);
+    await reader.onLoadEnd.first;
+    if (reader.result == null) return null;
+
+    final Uint8List bytes = (reader.result as Uint8List);
+    final name = file.name;
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'jpg';
     final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final mimeType = ext == 'png' ? 'image/png' : 'image/jpeg';
+    final mimeType = file.type.isNotEmpty ? file.type : (ext == 'png' ? 'image/png' : 'image/jpeg');
 
     await SupabaseService.client.storage.from('avatars').uploadBinary(
       fileName,
@@ -224,8 +228,7 @@ class _ManageChildrenScreenState extends State<ManageChildrenScreen> {
       fileOptions: FileOptions(contentType: mimeType),
     );
 
-    final url = SupabaseService.client.storage.from('avatars').getPublicUrl(fileName);
-    return url;
+    return SupabaseService.client.storage.from('avatars').getPublicUrl(fileName);
   }
 
   void _showAddChild() {
